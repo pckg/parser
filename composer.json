@@ -1,0 +1,28 @@
+{
+  "name": "pckg/parser",
+  "description": "Abstract Selenium and CURL parsers",
+  "homepage": "https://github.com/pckg/parser",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Bojan Rajh",
+      "email": "schtr4jh@schtr4jh.net"
+    }
+  ],
+  "require": {
+    "facebook/webdriver": "1.7.*",
+    "paquettg/php-html-parser": "dev-master",
+    "viison/address-splitter": "dev-master",
+    "pckg/collection": "dev-master",
+    "guzzlehttp/guzzle": "6.*",
+    "php-http/guzzle6-adapter": "^2.0@dev"
+  },
+  "minimum-stability": "dev",
+  "autoload": {
+    "psr-4": {
+      "": [
+        "src/"
+      ]
+    }
+  }
+}
