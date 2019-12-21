@@ -22,7 +22,7 @@ class CircularCurl extends Curl
         $listings = $this->getListingsFromHtml($this->source->getIndexStructure(), $html);
 
         if ($then) {
-            $then($this, $listings, $html);
+            $then($listings, $html);
         }
 
         return $listings;

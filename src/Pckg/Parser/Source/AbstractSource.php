@@ -178,38 +178,6 @@ abstract class AbstractSource implements SourceInterface
     }
 
     /**
-     * @param array $listings
-     *
-     * @return \Pckg\Collection
-     */
-    public function addScore(array $listings)
-    {
-        /**
-         * Update status in database.
-         */
-        $this->page->updateStatus('matching');
-
-        $matched = collect($listings)->map(function($props) {
-            /**
-             * Trim all, add score and match.
-             *
-             * @T00D00 - move to scintilla?
-             */
-            $props = collect($props)->trim()->all();
-
-            /*$props['match'] = $this->page->isMatch($props, [], $by);
-            $props['by'] = $by;
-            $props['score'] = $this->getSearch()->getScore($props);*/
-
-            return $props;
-        });
-
-        $this->page->updateStatus('matched');
-
-        return $matched;
-    }
-
-    /**
      * @var string
      */
     protected $key = 'abstract';
@@ -229,26 +197,18 @@ abstract class AbstractSource implements SourceInterface
         /**
          * Tell the system we have something to parse.
          */
-        $this->page = $this->search->createPage(['source' => $this->key, 'url' => $url]);
+        $this->page = $this->search->createPage(['source' => $this->key, 'url' => $url, 'status' => 'created']);
 
         try {
             /**
              * Get initial listings.
              * Search additional page processing in same process.
              */
-            $this->getDriver()->getListings($this, $url, function(DriverInterface $driver, $listings, ...$params) {
-                /**
-                 * Filter listings and add score.
-                 */
-                $listings = $this->addScore($listings);
-
-                /**
-                 * Push to queue.
-                 */
-                $this->getDispatcher()->trigger('listings:discovered', ['source' => $this, 'listings' => $listings]);
-                $this->page->processListings($listings->all());
-                $this->processIndexPagination(2, ...$params);
-                $this->afterIndexParse($driver, $listings, ...$params);
+            $this->page->updateStatus('processing');
+            $this->getDriver()->getListings($url, function(array $listings, ...$params) {
+                $this->page->processListings($listings);
+                $this->processIndexPagination(2, null, ...$params);
+                $this->afterIndexParse($listings, ...$params);
             });
         } catch (\Throwable $e) {
             $this->page->updateStatus('error');
@@ -271,17 +231,16 @@ abstract class AbstractSource implements SourceInterface
             /**
              * Clone search source for new page.
              */
-            $this->page = $this->page->clone(['page' => $page, 'url' => $url]);
-            $driver = $this->getDriver();
-            $driver->getListings($url, function($listings, ...$params) use ($page, $then) {
-                /**
-                 * First process.
-                 */
-                $listings = $this->addScore($listings);
-                $this->page->processListings($listings->all());
-                $then($listings->all());
+            $this->page = $this->page->clone(['page' => $page, 'url' => $url, 'status' => 'created']);
 
-                if (!$listings->all() || !$this->shouldContinueToNextPage($page)) {
+            $this->page->updateStatus('processing');
+            $driver->getListings($url, function($listings, ...$params) use ($page, $then) {
+                $this->page->processListings($listings);
+                if ($then) {
+                    $then($listings);
+                }
+
+                if (!$listings || !$this->shouldContinueToNextPage($page)) {
                     return;
                 }
 
@@ -300,7 +259,7 @@ abstract class AbstractSource implements SourceInterface
     {
         $result->updateStatus('parsing');
 
-        return $this->getDriver()->getListingProps($this, $url);
+        return $this->getDriver()->getListingProps($url);
     }
 
     public function afterListingParse($driver, $listing, ...$params)
@@ -325,7 +284,7 @@ abstract class AbstractSource implements SourceInterface
     /**
      * @param SearchInterface $search
      */
-    public function afterIndexParse($driver, Collection $listings, ...$params)
+    public function afterIndexParse(array $listings, ...$params)
     {
         /**
          * This is where our index or search page was parsed and we are trying to parse additional sources.

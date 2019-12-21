@@ -47,7 +47,7 @@ interface SourceInterface
      */
     public function processIndexParse($url = null);
 
-    public function afterIndexParse($driver, Collection $listings, ...$props);
+    public function afterIndexParse(array $listings, ...$props);
 
     public function processIndexPagination($page, callable $then, ...$params);
 
