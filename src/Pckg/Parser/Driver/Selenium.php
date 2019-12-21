@@ -7,6 +7,7 @@ use Facebook\WebDriver\Remote\RemoteWebElement;
 use Facebook\WebDriver\Remote\WebDriverCapabilityType;
 use Facebook\WebDriver\WebDriverBy;
 use Pckg\Parser\Node\SeleniumNode;
+use Pckg\Parser\SkipException;
 use Pckg\Parser\Source\AbstractSource;
 use Pckg\Parser\ParserInterface;
 use Pckg\Parser\Driver\AbstractDriver;
@@ -18,96 +19,43 @@ class Selenium extends AbstractDriver implements DriverInterface
 
     protected $node = SeleniumNode::class;
 
-    protected $host = 'http://selenium-hub:4444/wd/hub';
+    /**
+     * @return $this|\Pckg\Parser\Driver\AbstractDriver
+     * @throws \Throwable
+     */
+    public function open()
+    {
+        $proxy = $this->getHttpProxy();
+
+        $this->client = SeleniumFactory::getSeleniumClient(null, $proxy);
+
+        return $this;
+    }
+
+    /**
+     * @return \Pckg\Parser\Driver\AbstractDriver
+     */
+    public function close()
+    {
+        if ($this->client) {
+            $this->client->close();
+        }
+
+        return parent::close();
+    }
 
     /**
      * @return RemoteWebDriver
      */
-    public function getSeleniumClient($host = null)
+    private function getSeleniumClient($host = null)
     {
-        if (!$host) {
-            $host = $this->host;
+        if ($this->client) {
+            return $this->client;
         }
-        $capabilities = DesiredCapabilities::chrome();
-        $options = new ChromeOptions();
-        $options->addArguments([
-                                   '--disable-dev-shm-usage',
-                                   '--whitelisted-ips',
-                                   '--disable-extensions',
-                                   '--no-sandbox',
-                                   '--verbose',
-                                   '--disable-gpu',
-                                   //'--headless',
-                                   '--window-size=1280,1024',
-                                   //'headless',
-                                   'start-maximized',
-                                   'disable-infobar',
-                                   '--lang=en-GB',
-                                   '--user-agent=Mozilla/5.0 (X11; Linux x86_64)AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.39 Safari/537.36',
-                               ]);
-        $capabilities->setCapability(ChromeOptions::CAPABILITY, $options);
 
-        /**
-         * Select random proxy.
-         */
         $proxy = $this->getHttpProxy();
-        if ($proxy) {
-            $capabilities->setCapability(WebDriverCapabilityType::PROXY, [
-                'proxyType' => 'manual',
-                'httpProxy' => 'http://' . $proxy,
-                'sslProxy'  => 'http://' . $proxy,
-            ]);
-        }
 
-        d('creating web driver');
-        try {
-            $webdriver = RemoteWebDriver::create($host, $capabilities, 5000);
-        } catch (\Throwable $e) {
-            ddd(exception($e), get_class($e));
-        }
-        d('web driver created');
-
-        $webdriver->executeScript($this->getProtectionScript());
-
-        return $webdriver;
-    }
-
-    public function getProtectionScript()
-    {
-        return '
-    // Pass the Webdriver Test.
-    Object.defineProperty(navigator, \'webdriver\', {
-      get: function() { return false; }
-    });
-
-  // Pass the Chrome Test.
-    // We can mock this in as much depth as we need for the test.
-    window.navigator.chrome = {
-      runtime: {},
-      // etc.
-    };
-
-  // Pass the Permissions Test.
-    const originalQuery = window.navigator.permissions.query;
-    return window.navigator.permissions.query = function(parameters){ return parameters.call(
-      parameters.name === \'notifications\' ?
-        Promise.resolve({ state: Notification.permission }) :
-        originalQuery(parameters)
-    )};
-
-  // Pass the Plugins Length Test.
-    // Overwrite the `plugins` property to use a custom getter.
-    Object.defineProperty(navigator, \'plugins\', {
-      // This just needs to have `length > 0` for the current test,
-      // but we could mock the plugins too if necessary.
-      get: function(){ return [1, 2, 3, 4, 5]; },
-    });
-
-  // Pass the Languages Test.
-    // Overwrite the `plugins` property to use a custom getter.
-    Object.defineProperty(navigator, \'languages\', {
-      get: function() { return [\'en-US\', \'en\']; }
-    });';
+        return $this->client = SeleniumFactory::getSeleniumClient($host, $proxy);
     }
 
     /**
@@ -117,59 +65,32 @@ class Selenium extends AbstractDriver implements DriverInterface
      *
      * @return array
      */
-    public function getListings(SourceInterface $parser, string $url, callable $then = null)
+    public function getListings(string $url, callable $then = null)
     {
-        $parser->getSearchSource()->updateStatus('initiating');
+        $this->source->getPage()->updateStatus('initiating');
         $selenium = $this->getSeleniumClient();
-        $parser->getSearchSource()->updateStatus('initiated');
+        $this->source->getPage()->updateStatus('initiated');
         try {
-            $parser->firewall($selenium, $url);
+            $this->source->firewall($url);
 
-            $listings = [];
             try {
-                d('taking screenshot');
-                $selenium->takeScreenshot(path('uploads') . 'selenium/after-firewall-' .
-                                          sluggify(microtime() . ' ' . $url) . '.png');
-                d('screenshot taken');
-                $parser->getSearchSource()->updateStatus('parsing');
-                $listings = $this->getListingsFromIndex($selenium, $parser->getIndexStructure());
-                $parser->getSearchSource()->updateStatus('parsed');
-                $selenium->takeScreenshot(path('uploads') . 'selenium/after-parse-' .
-                                          sluggify(microtime() . ' ' . $url) . '.png');
-                d('listings', $listings);
+                $this->source->getPage()->updateStatus('parsing');
+                $listings = $this->getListingsFromIndex();
+                $this->source->getPage()->updateStatus('parsed');
             } catch (\Throwable $e) {
-                $parser->getSearchSource()->updateStatus('error');
-                $selenium->takeScreenshot(path('uploads') . 'selenium/' . sluggify(microtime() . ' ' . $url) . '.png');
-                d('error gettings listings from index');
-            }
-
-            /**
-             * Some pages require additional pagination parsing.
-             */
-            if ($listings && $then) {
+                $this->source->getPage()->updateStatus('error');
+            } finally {
                 try {
-                    $then($this, $listings, $selenium);
+                    $then($listings, $selenium);
                 } catch (\Throwable $e) {
                     d('error running then', exception($e));
                 }
             }
 
-            /**
-             * We would also like to paginate? Probably in same session for better results?
-             */
-            if ($then) {
-                $selenium->quit();
-            }
-
             return $listings;
         } catch (\Throwable $e) {
+            $selenium->takeScreenshot(path('uploads') . 'selenium/last.png');
             d(exception($e));
-            try {
-                $selenium->takeScreenshot(path('uploads') . 'selenium/' . sluggify(microtime() . ' ' . $url) . '.png');
-            } catch (\Throwable $e) {
-
-            }
-            $selenium->quit();
         }
     }
 
@@ -179,12 +100,14 @@ class Selenium extends AbstractDriver implements DriverInterface
      *
      * @return array
      */
-    public function getListingsFromIndex(RemoteWebDriver $selenium, array $structure)
+    public function getListingsFromIndex()
     {
+        $structure = $this->source->getIndexStructure();
         $selector = array_keys($structure)[0];
         $selectors = $structure[$selector];
         $listingsSelector = array_keys($structure)[0];
 
+        $selenium = $this->getClient();
         $allListings = $selenium->findElements(WebDriverBy::cssSelector($listingsSelector));
 
         /**
@@ -203,10 +126,14 @@ class Selenium extends AbstractDriver implements DriverInterface
                 foreach ($selectors as $selector => $details) {
                     try {
                         $this->processSectionByStructure($this->makeNode($node), $selector, $details, $props);
+                    } catch (SkipException $e) {
+                        throw $e;
                     } catch (\Throwable $e) {
                         d('EXCEPTION [parsing index listing selector] ' . $selector . ' ' . exception($e));
                     }
                 }
+
+                d($props);
 
                 return $props;
             } catch (\Throwable $e) {
@@ -215,45 +142,35 @@ class Selenium extends AbstractDriver implements DriverInterface
         })->removeEmpty()->rekey()->all();
     }
 
+    public function autoParseListing(&$props)
+    {
+        d('parsing structure');
+        $structure = $this->source->getListingStructure();
+        foreach ($structure as $selector => $details) {
+            try {
+                $this->processSectionByStructure($this->makeNode($this->getClient()->findElement(WebDriverBy::cssSelector('body'))),
+                                                 $selector, $details, $props);
+            } catch (\Throwable $e) {
+                d('exception parsing node selector ', $selector, exception($e));
+            }
+        }
+        d('parsed');
+        $this->source->afterListingParse($this->getClient(), $props);
+        d('parsed sub');
+    }
+
     /**
      * @param              $url
      */
-    public function getListingProps($url)
+    public function getListingProps(string $url, callable $then = null)
     {
-        d('getting selenium client');
-        $selenium = $this->getSeleniumClient();
-        d('got selenium client');
-
         try {
             $props = [];
-            d('opening url');
-            $selenium->get($url);
-            d('opened, sleeping');
-            $selenium->takeScreenshot(path('uploads') . 'selenium/before-props-' . sluggify(microtime() . ' ' . $url) .
-                                      '.png');
-            d('parsing structure');
-            $structure = $this->source->getListingStructure();
-            foreach ($structure as $selector => $details) {
-                try {
-                    $this->processSectionByStructure($this->makeNode($selenium->findElement(WebDriverBy::cssSelector('body'))),
-                                                     $selector, $details, $props);
-                } catch (\Throwable $e) {
-                    d('exception parsing node selector ', $selector, exception($e));
-                }
-            }
-            d('parsed');
-
-            // $this->firewall($selenium, $url);
-
-            // parse?
-            $selenium->takeScreenshot(path('uploads') . 'selenium/after-props-' . sluggify(microtime() . ' ' . $url) .
-                                      '.png');
-
-            $selenium->quit();
+            $this->getClient()->get($url);
+            $this->autoParseListing($props);
 
             return $props;
         } catch (\Throwable $e) {
-            $selenium->quit();
             d("getlistingprops", exception($e));
         }
     }
@@ -288,6 +205,17 @@ class Selenium extends AbstractDriver implements DriverInterface
     public function getElementByCss($section, string $css)
     {
         return $section->findElement(WebDriverBy::cssSelector($css));
+    }
+
+    /**
+     * @param $section RemoteWebElement
+     * @param $css
+     *
+     * @return mixed
+     */
+    public function getElementsByCss($section, string $css)
+    {
+        return $section->findElements(WebDriverBy::cssSelector($css));
     }
 
     /**

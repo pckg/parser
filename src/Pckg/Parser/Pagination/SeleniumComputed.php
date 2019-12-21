@@ -51,7 +51,7 @@ class SeleniumComputed
                                                       ]);
                 $selenium->get($url);
                 sleep(3);
-                $listings = $driver->getListingsFromIndex($selenium, $parser->getIndexStructure());
+                $listings = $driver->getListingsFromIndex();
                 $listings = $parser->addScore($listings, $searchSource);
                 $searchSource->processListings($listings->all());
             } catch (\Throwable $e) {

@@ -1,6 +1,7 @@
 <?php namespace Pckg\Parser\Driver;
 
 use GuzzleHttp\Client;
+use Pckg\Parser\SkipException;
 use PHPHtmlParser\Dom;
 use Pckg\Parser\Source\SourceInterface;
 use Pckg\Parser\Source\AbstractSource;
@@ -23,19 +24,19 @@ class Curl extends AbstractDriver implements DriverInterface
      * @throws \PHPHtmlParser\Exceptions\NotLoadedException
      * @throws \PHPHtmlParser\Exceptions\StrictException
      */
-    public function getListings(SourceInterface $parser, string $url, callable $then = null)
+    public function getListings(string $url, callable $then = null)
     {
         /**
          * Get HTML.
          */
-        $parser->getSearchSource()->updateStatus('parsing');
+        $this->source->getPage()->updateStatus('parsing');
         $html = $this->getHttp200($url);
 
-        $listings = $this->getListingsFromHtml($parser->getIndexStructure(), $html);
-        $parser->getSearchSource()->updateStatus('parsed');
+        $listings = $this->getListingsFromHtml($this->source->getIndexStructure(), $html);
+        $this->source->getPage()->updateStatus('parsed');
 
         if ($then) {
-            $then($this, $listings, $html);
+            $then($listings, $html);
         }
 
         return $listings;
@@ -68,12 +69,15 @@ class Curl extends AbstractDriver implements DriverInterface
                 foreach ($selectors as $selector => $details) {
                     try {
                         $this->processSectionByStructure($this->makeNode($node), $selector, $details, $props);
+                    } catch (SkipException $e) {
+                        throw $e;
                     } catch (\Throwable $e) {
                         d('EXCEPTION [parsing index listing selector 1] ' . $selector . ' ' . exception($e));
                     }
                 }
 
                 return $props;
+            } catch (SkipException $e) {
             } catch (\Throwable $e) {
                 d('EXCEPTION [parsing index listing]' . exception($e));
             }
@@ -90,14 +94,28 @@ class Curl extends AbstractDriver implements DriverInterface
      * @throws \PHPHtmlParser\Exceptions\StrictException
      * @throws \Exception
      */
-    public function getListingProps(string $url)
+    public function getListingProps(string $url, callable $then = null)
     {
         /**
          * Get HTML.
          */
         $html = $this->getHttp200($url);
 
-        return $this->getListingPropsFromHtml($this->source->getListingStructure(), $html);
+        $props = $this->getListingPropsFromHtml($this->source->getListingStructure(), $html);
+
+        if ($then) {
+            $then($props);
+        }
+
+        return $props;
+    }
+
+    public function autoParseListing(&$props)
+    {
+        $props = $this->getListingPropsFromHtml($this->source->getListingStructure());
+        d('parsing sub');
+        $this->source->afterListingParse($selenium, $props);
+        d('parsed sub');
     }
 
     /**
@@ -123,7 +141,8 @@ class Curl extends AbstractDriver implements DriverInterface
         $props = [];
         foreach ($structure as $selector => $details) {
             try {
-                $this->processSectionByStructure(new \Pckg\Parser\Node\CurlNode($dom->find('body', 0)), $selector, $details, $props);
+                $this->processSectionByStructure(new \Pckg\Parser\Node\CurlNode($dom->find('body', 0)), $selector,
+                                                 $details, $props);
             } catch (\Throwable $e) {
                 d('exception parsing node selector ', $selector, exception($e));
             }
@@ -150,13 +169,14 @@ class Curl extends AbstractDriver implements DriverInterface
     protected function getHttp200($url)
     {
         return cache(AbstractSource::class . '.getHttp200.' . sha1($url), function() use ($url) {
+            d("requesting", $url);
             $client = $this->getHttpClient();
             $options = [
                 // 'debug'   => true,
                 'headers' => [
                     'User-Agent'      => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36',
                     'Accept-Language' => 'en,en-US;q=0.9,en;q=0.8',
-                    'Accept-Encoding' => 'gzip, deflate, br',
+                    'Accept-Encoding' => 'gzip, deflate', // br
                 ],
             ];
 
@@ -182,10 +202,17 @@ class Curl extends AbstractDriver implements DriverInterface
             }
 
             /**
+             * Throttle.
+             */
+            $sleep = rand(5, 10);
+            d('sleeping', $sleep);
+            sleep($sleep);
+
+            /**
              * Extract HTML from response.
              */
             return $response->getBody()->getContents();
-        }, 'app', 30 * 60);
+        }, 'app', 24 * 60 * 60);
     }
 
     /**

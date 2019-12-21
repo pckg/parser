@@ -1,6 +1,8 @@
 <?php namespace Pckg\Parser\Node;
 
+use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Pckg\Collection;
+use PHPHtmlParser\Dom\HtmlNode;
 
 /**
  * Interface NodeInterface
@@ -10,6 +12,11 @@ use Pckg\Collection;
 interface NodeInterface
 {
 
+    /**
+     * @return mixed|RemoteWebDriver|HtmlNode
+     */
+    public function getNode();
+    
     /**
      * @return string|null
      */

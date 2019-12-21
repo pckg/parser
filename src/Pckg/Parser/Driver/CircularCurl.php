@@ -15,11 +15,11 @@ class CircularCurl extends Curl
      * @return \Pckg\Collection
      * @throws \Exception
      */
-    public function getListings(SourceInterface $parser, string $url, callable $then = null)
+    public function getListings(string $url, callable $then = null)
     {
         $html = $this->getHttp200($url);
 
-        $listings = $this->getListingsFromHtml($parser->getIndexStructure(), $html);
+        $listings = $this->getListingsFromHtml($this->source->getIndexStructure(), $html);
 
         if ($then) {
             $then($this, $listings, $html);

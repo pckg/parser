@@ -11,4 +11,6 @@ interface SearchInterface
 
     public function getDataProps();
 
+    public function createPage(array $data = []);
+
 }

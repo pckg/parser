@@ -14,4 +14,6 @@ interface PageInterface
 
     public function updateStatus(string $status);
 
+    public function clone(array $data = []);
+
 }

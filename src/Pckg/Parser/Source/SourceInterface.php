@@ -1,6 +1,9 @@
 <?php namespace Pckg\Parser\Source;
 
+use Pckg\Collection;
+use Pckg\Concept\Event\Dispatcher;
 use Pckg\Parser\Driver\DriverInterface;
+use Pckg\Parser\Search\PageInterface;
 use Pckg\Parser\Search\ResultInterface;
 use Pckg\Parser\Search\SearchInterface;
 use Pckg\Parser\SearchResult;
@@ -12,6 +15,18 @@ use Pckg\Parser\SearchResult;
  */
 interface SourceInterface
 {
+
+    /**
+     * @return Dispatcher
+     */
+    public function getDispatcher();
+
+    /**
+     * @param mixed $capability
+     *
+     * @return boolean
+     */
+    public function hasCapability($capability);
 
     /**
      * @param SearchInterface $search
@@ -30,7 +45,11 @@ interface SourceInterface
     /**
      * @return array
      */
-    public function processIndexParse();
+    public function processIndexParse($url = null);
+
+    public function afterIndexParse($driver, Collection $listings, ...$props);
+
+    public function processIndexPagination($page, callable $then, ...$params);
 
     /**
      * @return array
@@ -44,6 +63,15 @@ interface SourceInterface
      * @return array
      */
     public function processListingParse(ResultInterface $result, $url);
+
+    /**
+     * @param       $driver
+     * @param       $listing
+     * @param mixed ...$props
+     *
+     * @return mixed
+     */
+    public function afterListingParse($driver, $listing, ...$props);
 
     /**
      * @return DriverInterface
@@ -61,8 +89,13 @@ interface SourceInterface
     public function getSearch();
 
     /**
+     * @return PageInterface
+     */
+    public function setPage(PageInterface $page);
+
+    /**
      * @return SourceInterface
      */
-    public function getSearchSource();
+    public function getPage();
 
 }
