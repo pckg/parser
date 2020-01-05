@@ -206,9 +206,8 @@ abstract class AbstractSource implements SourceInterface
              */
             $this->page->updateStatus('processing');
             $this->getDriver()->getListings($url, function(array $listings, ...$params) {
-                d($listings);
                 $this->page->processListings($listings);
-                // $this->processIndexPagination(2, null, ...$params);
+                $this->processIndexPagination(2, null, ...$params);
                 $this->afterIndexParse($listings, ...$params);
             });
         } catch (\Throwable $e) {
@@ -224,9 +223,11 @@ abstract class AbstractSource implements SourceInterface
      */
     public function processIndexPagination($page, callable $then = null, ...$params)
     {
+        if (!$this->shouldContinueToNextPage($page)) {
+            return;
+        }
+
         $url = $this->buildIndexUrl($page);
-        d('sleeping 10, ' . $url);
-        sleep(10);
 
         try {
             /**
@@ -274,7 +275,7 @@ abstract class AbstractSource implements SourceInterface
          * Limit number of parsed (sub)pages.
          */
         if ($this->subPages && $page >= $this->subPages) {
-            d('soft limit, more than 5 pages');
+            d('soft limit, more than ' . $this->subPages . ' pages');
 
             return false;
         }
