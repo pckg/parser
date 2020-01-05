@@ -206,8 +206,9 @@ abstract class AbstractSource implements SourceInterface
              */
             $this->page->updateStatus('processing');
             $this->getDriver()->getListings($url, function(array $listings, ...$params) {
+                d($listings);
                 $this->page->processListings($listings);
-                $this->processIndexPagination(2, null, ...$params);
+                // $this->processIndexPagination(2, null, ...$params);
                 $this->afterIndexParse($listings, ...$params);
             });
         } catch (\Throwable $e) {

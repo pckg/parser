@@ -204,7 +204,7 @@ class Curl extends AbstractDriver implements DriverInterface
             /**
              * Throttle.
              */
-            $sleep = rand(5, 10);
+            $sleep = rand(1, 5);
             d('sleeping', $sleep);
             sleep($sleep);
 

@@ -94,7 +94,7 @@ interface SourceInterface
     public function setPage(PageInterface $page);
 
     /**
-     * @return SourceInterface
+     * @return PageInterface
      */
     public function getPage();
 
