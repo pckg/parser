@@ -62,7 +62,8 @@ class Curl extends AbstractDriver implements DriverInterface
         /**
          * Find all listings and parse them.
          */
-        return collect($dom->find($selector))->map(function(Dom\AbstractNode $node) use ($selectors) {
+        return collect($dom->find($selector))->map(function(Dom\AbstractNode $node, $i) use ($selectors) {
+            d('index ' . $i);
             try {
                 $props = [];
 

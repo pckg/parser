@@ -345,4 +345,11 @@ abstract class AbstractSource implements SourceInterface
         }
     }
 
+    public function copySearchProps($keys, &$props)
+    {
+        foreach ($keys as $key) {
+            $props[$key] = $this->getSearch()->getDataProp($key);
+        }
+    }
+
 }

@@ -46,4 +46,14 @@ abstract class AbstractNode implements Node\NodeInterface
         return '<' . $tag . '>' . $this->getInnerHtml() . '</' . $tag . '>';
     }
 
+    /**
+     * @param $class
+     *
+     * @return bool
+     */
+    public function hasClass($class)
+    {
+        return stringify($this->getAttribute('class'))->explodeToCollection(' ')->has($class);
+    }
+
 }
