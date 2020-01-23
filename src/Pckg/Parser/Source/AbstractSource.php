@@ -128,6 +128,14 @@ abstract class AbstractSource implements SourceInterface
     }
 
     /**
+     * @return string
+     */
+    public function getDriverClass()
+    {
+        return $this->driver;
+    }
+
+    /**
      * @param null $message
      *
      * @throws SkipException
