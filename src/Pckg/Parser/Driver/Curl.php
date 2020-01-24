@@ -205,15 +205,21 @@ class Curl extends AbstractDriver implements DriverInterface
             /**
              * Throttle.
              */
-            $sleep = rand(1, 5);
-            d('sleeping', $sleep);
-            sleep($sleep);
+            $this->throttle();
 
             /**
              * Extract HTML from response.
              */
             return $response->getBody()->getContents();
         }, 'app', 24 * 60 * 60);
+    }
+
+    protected function throttle()
+    {
+        return; // no throttle
+        $sleep = rand(1, 5);
+        d('sleeping', $sleep);
+        sleep($sleep);
     }
 
     /**
