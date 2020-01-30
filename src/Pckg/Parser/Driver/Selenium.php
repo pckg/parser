@@ -107,7 +107,7 @@ class Selenium extends AbstractDriver implements DriverInterface
         $selectors = $structure[$selector];
         $listingsSelector = array_keys($structure)[0];
 
-        $selenium = $this->getClient();
+        $selenium = $this->getSeleniumClient();
         $allListings = $selenium->findElements(WebDriverBy::cssSelector($listingsSelector));
 
         /**
