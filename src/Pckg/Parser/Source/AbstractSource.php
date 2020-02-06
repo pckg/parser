@@ -193,15 +193,8 @@ abstract class AbstractSource implements SourceInterface
     /**
      * @param SearchInterface $search
      */
-    public function processIndexParse($url = null)
+    public function processIndexParse($url)
     {
-        /**
-         * Build info.
-         */
-        if (!$url) {
-            $url = $this->buildIndexUrl();
-        }
-
         /**
          * Tell the system we have something to parse.
          */
@@ -289,6 +282,16 @@ abstract class AbstractSource implements SourceInterface
         }
 
         return true;
+    }
+
+    /**
+     * @param SearchInterface $search
+     */
+    public function beforeIndexParse()
+    {
+        /**
+         * This is where search is set and we can validate it.
+         */
     }
 
     /**

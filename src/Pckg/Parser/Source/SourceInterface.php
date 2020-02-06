@@ -45,7 +45,7 @@ interface SourceInterface
     /**
      * @return array
      */
-    public function processIndexParse($url = null);
+    public function processIndexParse($url);
 
     public function afterIndexParse(array $listings, ...$props);
 
