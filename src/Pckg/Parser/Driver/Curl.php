@@ -42,6 +42,16 @@ class Curl extends AbstractDriver implements DriverInterface
         return $listings;
     }
 
+    public function getCurlParserOptions()
+    {
+        return [
+            'cleanupInput'  => true,
+            'removeScripts' => true,
+            'removeStyles'  => true,
+            //'htmlSpecialCharsDecode' => true,
+        ];
+    }
+
     /**
      * @param $structure
      * @param $html
@@ -57,12 +67,34 @@ class Curl extends AbstractDriver implements DriverInterface
         $selector = array_keys($structure)[0];
         $selectors = $structure[$selector];
 
-        $dom = (new Dom())->loadStr($html);
+        $options = $this->getCurlParserOptions();
+
+        if (strpos($selector, 'json:') === 0) {
+            $options = [
+                'cleanupInput'  => false,
+                'removeScripts' => false,
+                'removeStyles'  => false,
+            ];
+        }
+        $dom = (new Dom())->setOptions($options)->loadStr($html);
 
         /**
-         * Find all listings and parse them.
+         * We have simple JSON element with all the data.
          */
-        return collect($dom->find($selector))->map(function(Dom\AbstractNode $node, $i) use ($selectors) {
+        if (strpos($selector, 'json:') === 0) {
+            d('using json data');
+            $script = new CurlNode($dom->find(substr($selector, 5), 0));
+
+            return $selectors(json_decode($script->getInnerHtml(), true));
+        }
+
+        /**
+         * We will loop over defined structure.
+         */
+        $listings = collect($dom->find($selector));
+        d('located elements ' . $listings->count() . ' with selector ' . $selector);
+
+        return $listings->map(function(Dom\AbstractNode $node, $i) use ($selectors) {
             d('index ' . $i);
             try {
                 $props = [];
