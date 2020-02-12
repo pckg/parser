@@ -70,6 +70,7 @@ class Curl extends AbstractDriver implements DriverInterface
         $options = $this->getCurlParserOptions();
 
         if (strpos($selector, 'json:') === 0) {
+            d('using raw input');
             $options = [
                 'cleanupInput'  => false,
                 'removeScripts' => false,
@@ -82,17 +83,29 @@ class Curl extends AbstractDriver implements DriverInterface
          * We have simple JSON element with all the data.
          */
         if (strpos($selector, 'json:') === 0) {
-            d('using json data');
-            $script = new CurlNode($dom->find(substr($selector, 5), 0));
+            $element = $dom->find(substr($selector, 5), 0);
+            if (!$element) {
+                d('no json element?', substr($selector, 5));
+                return [];
+            }
+            $script = new CurlNode($element);
 
-            return $selectors(json_decode($script->getInnerHtml(), true));
+            /**
+             * Selector is actually a single callback.
+             */
+            return $selectors(json_decode($script->getInnerText(), true));
         }
 
         /**
          * We will loop over defined structure.
          */
-        $listings = collect($dom->find($selector));
-        d('located elements ' . $listings->count() . ' with selector ' . $selector);
+        try {
+            $listings = collect($dom->find($selector));
+            d('located elements ' . $listings->count() . ' with selector ' . $selector);
+        } catch (\Throwable $e) {
+            d('error locating element', exception($e));
+            return [];
+        }
 
         return $listings->map(function(Dom\AbstractNode $node, $i) use ($selectors) {
             d('index ' . $i);
@@ -111,6 +124,7 @@ class Curl extends AbstractDriver implements DriverInterface
 
                 return $props;
             } catch (SkipException $e) {
+                d('skip exception');
             } catch (\Throwable $e) {
                 d('EXCEPTION [parsing index listing]' . exception($e));
             }

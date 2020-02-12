@@ -208,7 +208,11 @@ abstract class AbstractSource implements SourceInterface
             $this->page->updateStatus('processing');
             $this->getDriver()->getListings($url, function(array $listings, ...$params) {
                 $this->page->processListings($listings);
-                $this->processIndexPagination(2, null, ...$params);
+
+                if ($listings) {
+                    $this->processIndexPagination(2, null, ...$params);
+                }
+
                 $this->afterIndexParse($listings, ...$params);
             });
         } catch (\Throwable $e) {
@@ -234,23 +238,33 @@ abstract class AbstractSource implements SourceInterface
             /**
              * Clone search source for new page.
              */
-            $this->page = $this->page->clone(['page' => $page, 'url' => $url, 'status' => 'created']);
+            d('cloning', $page, $url);
+            $this->page = $this->page->clone(['page' => $page, 'url' => $url]);
+            d('cloned');
 
             $this->page->updateStatus('processing');
             $driver->getListings($url, function($listings, ...$params) use ($page, $then) {
+                d('got listing, processing');
                 $this->page->processListings($listings);
                 if ($then) {
+                    d('then');
                     $then($listings);
                 }
 
                 if (!$listings || !$this->shouldContinueToNextPage($page)) {
+                    d('no listings or should not continue;');
                     return;
                 }
 
                 /**
                  * Continue with next page.
                  */
-                $this->processIndexPagination($page + 1, $then, ...$params);
+                d('paginating');
+                try {
+                    $this->processIndexPagination($page + 1, $then, ...$params);
+                } catch (\Throwable $e) {
+                    d('error parsing pagination', exception($e));
+                }
             });
         } catch (\Throwable $e) {
             $this->page->updateStatus('error');
