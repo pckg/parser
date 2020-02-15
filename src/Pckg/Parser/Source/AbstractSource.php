@@ -243,7 +243,7 @@ abstract class AbstractSource implements SourceInterface
             d('cloned');
 
             $this->page->updateStatus('processing');
-            $driver->getListings($url, function($listings, ...$params) use ($page, $then) {
+            $this->getDriver()->getListings($url, function($listings, ...$params) use ($page, $then) {
                 d('got listing, processing');
                 $this->page->processListings($listings);
                 if ($then) {

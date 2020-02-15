@@ -29,11 +29,11 @@ class Curl extends AbstractDriver implements DriverInterface
         /**
          * Get HTML.
          */
-        $this->source->getPage()->updateStatus('parsing');
+        $this->getDispatcher()->trigger('page.status', 'parsing');
         $html = $this->getHttp200($url);
 
         $listings = $this->getListingsFromHtml($this->source->getIndexStructure(), $html);
-        $this->source->getPage()->updateStatus('parsed');
+        $this->getDispatcher()->trigger('page.status', 'parsed');
 
         if ($then) {
             $then($listings, $html);
@@ -257,7 +257,7 @@ class Curl extends AbstractDriver implements DriverInterface
              * Extract HTML from response.
              */
             return $response->getBody()->getContents();
-        }, 'app', 24 * 60 * 60);
+        }, 'app', 24 * 60 * 60); // cache for 24h?
     }
 
     protected function throttle()

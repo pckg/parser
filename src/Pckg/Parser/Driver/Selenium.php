@@ -67,18 +67,18 @@ class Selenium extends AbstractDriver implements DriverInterface
      */
     public function getListings(string $url, callable $then = null)
     {
-        $this->source->getPage()->updateStatus('initiating');
+        $this->getDispatcher()->trigger('page.status', 'initiating');
         $selenium = $this->getSeleniumClient();
-        $this->source->getPage()->updateStatus('initiated');
+        $this->getDispatcher()->trigger('page.status', 'initiated');
         try {
             $this->source->firewall($url);
 
             try {
-                $this->source->getPage()->updateStatus('parsing');
+                $this->getDispatcher()->trigger('page.status', 'parsing');
                 $listings = $this->getListingsFromIndex();
-                $this->source->getPage()->updateStatus('parsed');
+                $this->getDispatcher()->trigger('page.status', 'parsed');
             } catch (\Throwable $e) {
-                $this->source->getPage()->updateStatus('error');
+                $this->getDispatcher()->trigger('page.status', 'error');
             } finally {
                 try {
                     $then($listings, $selenium);
@@ -92,6 +92,8 @@ class Selenium extends AbstractDriver implements DriverInterface
             $selenium->takeScreenshot(path('uploads') . 'selenium/last.png');
             d(exception($e));
         }
+
+        return [];
     }
 
     /**

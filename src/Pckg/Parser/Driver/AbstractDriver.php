@@ -45,7 +45,7 @@ abstract class AbstractDriver implements DriverInterface
         return $this;
     }
 
-    public function __construct(SourceInterface $source)
+    public function __construct(SourceInterface $source = null)
     {
         $this->source = $source;
     }
