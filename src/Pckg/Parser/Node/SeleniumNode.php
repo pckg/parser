@@ -54,7 +54,7 @@ class SeleniumNode extends AbstractNode implements NodeInterface
      */
     public function getChildren()
     {
-        return collect($this->node->findElements(\WebDriverBy::cssSelector('> *')));
+        return collect($this->node->findElements(WebDriverBy::cssSelector('> *')));
     }
 
     /**
