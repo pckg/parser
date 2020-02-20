@@ -95,6 +95,10 @@ abstract class AbstractSource implements SourceInterface
             return $value;
         }
 
+        if ($value && substr($value, 0, 1) !== '/') {
+            $value = '/' . $value;
+        }
+
         return $this->base . $value;
     }
 
