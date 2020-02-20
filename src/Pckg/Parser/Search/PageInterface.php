@@ -16,4 +16,6 @@ interface PageInterface
 
     public function clone(array $data = []);
 
+    public function getPage();
+
 }

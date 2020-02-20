@@ -24,20 +24,16 @@ class Curl extends AbstractDriver implements DriverInterface
      * @throws \PHPHtmlParser\Exceptions\NotLoadedException
      * @throws \PHPHtmlParser\Exceptions\StrictException
      */
-    public function getListings(string $url, callable $then = null)
+    public function getListings(string $url)
     {
         /**
          * Get HTML.
          */
-        $this->getDispatcher()->trigger('page.status', 'parsing');
+        $this->trigger('page.status', 'parsing');
         $html = $this->getHttp200($url);
 
         $listings = $this->getListingsFromHtml($this->source->getIndexStructure(), $html);
-        $this->getDispatcher()->trigger('page.status', 'parsed');
-
-        if ($then) {
-            $then($listings, $html);
-        }
+        $this->trigger('page.status', 'parsed');
 
         return $listings;
     }
@@ -70,7 +66,7 @@ class Curl extends AbstractDriver implements DriverInterface
         $options = $this->getCurlParserOptions();
 
         if (strpos($selector, 'json:') === 0) {
-            d('using raw input');
+            $this->trigger('debug', 'Using raw / unclean input');
             $options = [
                 'cleanupInput'  => false,
                 'removeScripts' => false,
@@ -83,15 +79,15 @@ class Curl extends AbstractDriver implements DriverInterface
          * We have simple JSON element with all the data.
          */
         if (strpos($selector, 'json:') === 0) {
-            $element = $dom->find(substr($selector, 5), 0);
+            $finalSelector = substr($selector, 5);
+            $element = $dom->find($finalSelector, 0);
             if (!$element) {
-                d('no json element?', substr($selector, 5));
-                return [];
+                throw new \Exception('No JSON element ' . $finalSelector);
             }
             $script = new CurlNode($element);
 
             /**
-             * Selector is actually a single callback.
+             * Selector is actually a single callback when JSON is expected.
              */
             return $selectors(json_decode($script->getInnerText(), true));
         }
@@ -101,14 +97,14 @@ class Curl extends AbstractDriver implements DriverInterface
          */
         try {
             $listings = collect($dom->find($selector));
-            d('located elements ' . $listings->count() . ' with selector ' . $selector);
+            $this->trigger('debug', 'Located ' . $listings->count() . ' elements with selector ' . $selector);
         } catch (\Throwable $e) {
-            d('error locating element', exception($e));
+            $this->trigger('parse.exception', new \Exception('Error locating selector ' . $selector, null, $e));
+
             return [];
         }
 
         return $listings->map(function(Dom\AbstractNode $node, $i) use ($selectors) {
-            d('index ' . $i);
             try {
                 $props = [];
 
@@ -118,15 +114,15 @@ class Curl extends AbstractDriver implements DriverInterface
                     } catch (SkipException $e) {
                         throw $e;
                     } catch (\Throwable $e) {
-                        d('EXCEPTION [parsing index listing selector 1] ' . $selector . ' ' . exception($e));
+                        $this->trigger('parse.exception', $e);
                     }
                 }
 
                 return $props;
             } catch (SkipException $e) {
-                d('skip exception');
+                $this->trigger('parse.log', 'Skipping index ' . $i . ': ' . exception($e));
             } catch (\Throwable $e) {
-                d('EXCEPTION [parsing index listing]' . exception($e));
+                $this->trigger('parse.exception', new \Exception('Error parsing listing on index ' . $i, $null, $e));
             }
         })->removeEmpty()->rekey()->all();
     }
@@ -141,7 +137,7 @@ class Curl extends AbstractDriver implements DriverInterface
      * @throws \PHPHtmlParser\Exceptions\StrictException
      * @throws \Exception
      */
-    public function getListingProps(string $url, callable $then = null)
+    public function getListingProps(string $url)
     {
         /**
          * Get HTML.
@@ -150,19 +146,13 @@ class Curl extends AbstractDriver implements DriverInterface
 
         $props = $this->getListingPropsFromHtml($this->source->getListingStructure(), $html);
 
-        if ($then) {
-            $then($props);
-        }
-
         return $props;
     }
 
     public function autoParseListing(&$props)
     {
         $props = $this->getListingPropsFromHtml($this->source->getListingStructure());
-        d('parsing sub');
         $this->source->afterListingParse($selenium, $props);
-        d('parsed sub');
     }
 
     /**
@@ -179,8 +169,7 @@ class Curl extends AbstractDriver implements DriverInterface
         /**
          * Start parsing dom.
          */
-        $dom = new Dom();
-        $dom->loadStr($html);
+        $dom = null;
 
         /**
          * Get listing structure.
@@ -188,10 +177,25 @@ class Curl extends AbstractDriver implements DriverInterface
         $props = [];
         foreach ($structure as $selector => $details) {
             try {
+                if (!$dom) {
+                    $options = $this->getCurlParserOptions();
+
+                    if (strpos($selector, 'json:') === 0) {
+                        $this->trigger('debug', 'Using raw / unclean input');
+                        $options = [
+                            'cleanupInput'  => false,
+                            'removeScripts' => false,
+                            'removeStyles'  => false,
+                        ];
+                    }
+
+                    $dom = (new Dom())->setOptions($options)->loadStr($html);
+                }
+
                 $this->processSectionByStructure(new \Pckg\Parser\Node\CurlNode($dom->find('body', 0)), $selector,
                                                  $details, $props);
             } catch (\Throwable $e) {
-                d('exception parsing node selector ', $selector, exception($e));
+                $this->trigger('parse.exception', new \Exception('Error parsing node selector ' . $selector, null, $e));
             }
         }
 
@@ -216,10 +220,9 @@ class Curl extends AbstractDriver implements DriverInterface
     protected function getHttp200($url)
     {
         return cache(AbstractSource::class . '.getHttp200.' . sha1($url), function() use ($url) {
-            d("requesting", $url);
+            $this->trigger('debug', 'Not using cache for ' . $url);
             $client = $this->getHttpClient();
             $options = [
-                // 'debug'   => true,
                 'headers' => [
                     'User-Agent'      => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36',
                     'Accept-Language' => 'en,en-US;q=0.9,en;q=0.8',
@@ -228,7 +231,7 @@ class Curl extends AbstractDriver implements DriverInterface
             ];
 
             /**
-             * Check for proxy.
+             * Check for proxy. This is usually a Selenium Hub.
              */
             $proxy = $this->getHttpProxy();
             if ($proxy) {
@@ -236,12 +239,12 @@ class Curl extends AbstractDriver implements DriverInterface
             }
 
             /**
-             * Make request.
+             * Make CURL request.
              */
             $response = $client->get($url, $options);
 
             /**
-             * Expect code 200?
+             * Expect code 200. This may be driver or source dependant?
              */
             $code = $response->getStatusCode();
             if ($code !== 200) {
@@ -249,23 +252,10 @@ class Curl extends AbstractDriver implements DriverInterface
             }
 
             /**
-             * Throttle.
-             */
-            $this->throttle();
-
-            /**
              * Extract HTML from response.
              */
             return $response->getBody()->getContents();
-        }, 'app', 24 * 60 * 60); // cache for 24h?
-    }
-
-    protected function throttle()
-    {
-        return; // no throttle
-        $sleep = rand(1, 5);
-        d('sleeping', $sleep);
-        sleep($sleep);
+        }, 'app', '1day'); // cache for 24h?
     }
 
     /**

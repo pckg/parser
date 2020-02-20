@@ -30,14 +30,14 @@ interface DriverInterface
      *
      * @return array
      */
-    public function getListings(string $url, callable $then = null);
+    public function getListings(string $url);
 
     /**
      * @param string $url
      *
      * @return array
      */
-    public function getListingProps(string $url, callable $then = null);
+    public function getListingProps(string $url);
 
     /**
      * @param $driver

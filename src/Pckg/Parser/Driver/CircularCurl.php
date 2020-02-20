@@ -1,5 +1,6 @@
 <?php namespace Pckg\Parser\Driver;
 
+use Pckg\Parser\SkipException;
 use PHPHtmlParser\Dom;
 use Pckg\Parser\Source\SourceInterface;
 use Pckg\Parser\ParserInterface;
@@ -7,26 +8,6 @@ use Pckg\Parser\Driver\Curl;
 
 class CircularCurl extends Curl
 {
-
-    /**
-     * @param array  $structure
-     * @param string $url
-     *
-     * @return \Pckg\Collection
-     * @throws \Exception
-     */
-    public function getListings(string $url, callable $then = null)
-    {
-        $html = $this->getHttp200($url);
-
-        $listings = $this->getListingsFromHtml($this->source->getIndexStructure(), $html);
-
-        if ($then) {
-            $then($listings, $html);
-        }
-
-        return $listings;
-    }
 
     public function getListingsFromHtml($structure, $html)
     {
@@ -64,8 +45,10 @@ class CircularCurl extends Curl
                             foreach ($prop as $k => $v) {
                                 try {
                                     $this->processSectionByStructure($elementNode, $k, $v, $props);
+                                } catch (SkipException $e) {
+                                    throw $e;
                                 } catch (\Throwable $e) {
-                                    d('err', exception($e));
+                                    $this->trigger('parse.exception', $e);
                                 }
                             }
                             continue;
@@ -76,14 +59,18 @@ class CircularCurl extends Curl
                         }
                         $value = $elementNode->getInnerHtml();
                         $props[$prop] = $value;
+                    } catch (SkipException $e) {
+                        throw $e;
                     } catch (\Throwable $e) {
-                        d('error circ 2', exception($e));
+                        $this->trigger('parse.exception', $e);
                     }
                 }
 
                 return $props;
+            } catch (SkipException $e) {
+                $this->trigger('parse.log', 'Skipping index');
             } catch (\Throwable $e) {
-                d('error circ', exception($e));
+                $this->trigger('parse.exception', $e);
             }
         })->removeEmpty()->rekey()->all();
     }

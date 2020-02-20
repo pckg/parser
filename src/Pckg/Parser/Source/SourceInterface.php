@@ -47,9 +47,7 @@ interface SourceInterface
      */
     public function processIndexParse($url);
 
-    public function afterIndexParse(array $listings, ...$props);
-
-    public function processIndexPagination($page, callable $then, ...$params);
+    public function afterIndexParse();
 
     /**
      * @return array
@@ -58,11 +56,10 @@ interface SourceInterface
 
     /**
      * @param SearchResult $result
-     * @param              $url
      *
      * @return array
      */
-    public function processListingParse(ResultInterface $result, $url);
+    public function processListingParse(ResultInterface $result);
 
     /**
      * @param       $driver

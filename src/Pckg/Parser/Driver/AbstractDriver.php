@@ -19,7 +19,7 @@ abstract class AbstractDriver implements DriverInterface
 {
 
     /**
-     * @deprecated 
+     * @deprecated
      */
     use HttpDriver;
 
@@ -64,6 +64,11 @@ abstract class AbstractDriver implements DriverInterface
     public function getDispatcher()
     {
         return $this->source->getDispatcher();
+    }
+
+    public function trigger(string $event, $data)
+    {
+        return $this->getDispatcher()->trigger($event, $data);
     }
 
 }

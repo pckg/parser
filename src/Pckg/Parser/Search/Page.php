@@ -49,4 +49,9 @@ class Page implements PageInterface
         d('Status: ' . $status);
     }
 
+    public function getPage()
+    {
+        return $this->page['page'] ?? 1;
+    }
+
 }

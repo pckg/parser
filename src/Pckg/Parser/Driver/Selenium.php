@@ -65,26 +65,20 @@ class Selenium extends AbstractDriver implements DriverInterface
      *
      * @return array
      */
-    public function getListings(string $url, callable $then = null)
+    public function getListings(string $url)
     {
-        $this->getDispatcher()->trigger('page.status', 'initiating');
+        $this->trigger('page.status', 'initiating');
         $selenium = $this->getSeleniumClient();
-        $this->getDispatcher()->trigger('page.status', 'initiated');
+        $this->trigger('page.status', 'initiated');
         try {
             $this->source->firewall($url);
 
             try {
-                $this->getDispatcher()->trigger('page.status', 'parsing');
+                $this->trigger('page.status', 'parsing');
                 $listings = $this->getListingsFromIndex();
-                $this->getDispatcher()->trigger('page.status', 'parsed');
+                $this->trigger('page.status', 'parsed');
             } catch (\Throwable $e) {
-                $this->getDispatcher()->trigger('page.status', 'error');
-            } finally {
-                try {
-                    $then($listings, $selenium);
-                } catch (\Throwable $e) {
-                    d('error running then', exception($e));
-                }
+                $this->trigger('page.status', 'error');
             }
 
             return $listings;
@@ -164,7 +158,7 @@ class Selenium extends AbstractDriver implements DriverInterface
     /**
      * @param              $url
      */
-    public function getListingProps(string $url, callable $then = null)
+    public function getListingProps(string $url)
     {
         try {
             $props = [];

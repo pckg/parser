@@ -76,6 +76,11 @@ abstract class AbstractSource implements SourceInterface
         return $this->dispatcher;
     }
 
+    public function trigger(string $event, $data)
+    {
+        $this->getDispatcher()->trigger($event, $data);
+    }
+
     /**
      * @return string
      */
@@ -191,92 +196,63 @@ abstract class AbstractSource implements SourceInterface
     protected $key = 'abstract';
 
     /**
+     * @return string
+     */
+    public function getKey()
+    {
+        return $this->key;
+    }
+
+    /**
      * @param SearchInterface $search
      */
     public function processIndexParse($url)
     {
-        /**
-         * Tell the system we have something to parse.
-         */
-        $this->page = $this->search->createPage(['source' => $this->key, 'url' => $url, 'status' => 'created']);
-
         try {
             /**
              * Get initial listings.
              * Search additional page processing in same process.
              */
             $this->page->updateStatus('processing');
-            $this->getDriver()->getListings($url, function(array $listings, ...$params) {
-                $this->page->processListings($listings);
 
-                if ($listings) {
-                    $this->processIndexPagination(2, null, ...$params);
-                }
-
-                $this->afterIndexParse($listings, ...$params);
-            });
-        } catch (\Throwable $e) {
-            $this->page->updateStatus('error');
-            d('EXCEPTION [indexing] ' . exception($e));
-        }
-    }
-
-    /**
-     * @param DriverInterface $driver
-     * @param                 $page
-     * @param mixed           ...$params
-     */
-    public function processIndexPagination($page, callable $then = null, ...$params)
-    {
-        if (!$this->shouldContinueToNextPage($page)) {
-            return;
-        }
-
-        $url = $this->buildIndexUrl($page);
-
-        try {
             /**
-             * Clone search source for new page.
+             * Fetch and parse listings with specified driver.
              */
-            d('cloning', $page, $url);
-            $this->page = $this->page->clone(['page' => $page, 'url' => $url]);
-            d('cloned');
+            $listings = $this->getDriver()->getListings($url);
 
-            $this->page->updateStatus('processing');
-            $this->getDriver()->getListings($url, function($listings, ...$params) use ($page, $then) {
-                d('got listing, processing');
-                $this->page->processListings($listings);
-                if ($then) {
-                    d('then');
-                    $then($listings);
-                }
+            /**
+             * Save listings to the page.
+             */
+            $this->trigger('parse.log', 'Processing listings');
+            $this->page->processListings($listings);
+            $this->trigger('parse.log', 'Listings processed');
 
-                if (!$listings || !$this->shouldContinueToNextPage($page)) {
-                    d('no listings or should not continue;');
-                    return;
-                }
+            /**
+             * Check pagination.
+             */
+            $nextPage = ($this->page->getPage() ?? 1) + 1;
+            if ($listings && $this->shouldContinueToNextPage($nextPage)) {
+                $this->trigger('debug', 'Continuing with next page');
+                $url = $this->buildIndexUrl($nextPage);
+                $this->page = $this->page->clone(['page' => $nextPage, 'url' => $url]);
+                $this->processIndexParse($url); // recursive call
+            } else {
+                $this->trigger('debug', 'Finished with sub-pages');
+            }
 
-                /**
-                 * Continue with next page.
-                 */
-                d('paginating');
-                try {
-                    $this->processIndexPagination($page + 1, $then, ...$params);
-                } catch (\Throwable $e) {
-                    d('error parsing pagination', exception($e));
-                }
-            });
         } catch (\Throwable $e) {
+            $this->trigger('parse.exception', $e);
             $this->page->updateStatus('error');
-            d('error parsing pagination', exception($e));
         }
     }
 
-    public function processListingParse(ResultInterface $result, $url)
+    public function processListingParse(ResultInterface $result)
     {
         $result->updateStatus('parsing');
 
-        return $this->getDriver()->getListingProps($url);
+        $props = $this->getDriver()->getListingProps($result->getUrl());
+
+        $this->page->processListing($result, $props);
     }
 
     public function afterListingParse($driver, $listing, ...$params)
@@ -289,13 +265,11 @@ abstract class AbstractSource implements SourceInterface
         /**
          * Limit number of parsed (sub)pages.
          */
-        if ($this->subPages && $page >= $this->subPages) {
-            d('soft limit, more than ' . $this->subPages . ' pages');
-
-            return false;
+        if ($this->subPages && $page < $this->subPages) {
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     /**
@@ -311,7 +285,7 @@ abstract class AbstractSource implements SourceInterface
     /**
      * @param SearchInterface $search
      */
-    public function afterIndexParse(array $listings, ...$params)
+    public function afterIndexParse()
     {
         /**
          * This is where our index or search page was parsed and we are trying to parse additional sources.
