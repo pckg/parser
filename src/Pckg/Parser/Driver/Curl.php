@@ -13,6 +13,19 @@ use Pckg\Parser\Driver\DriverInterface;
 class Curl extends AbstractDriver implements DriverInterface
 {
 
+    const PARSER_DEFAULT = [
+        'cleanupInput'  => true,
+        'removeScripts' => true,
+        'removeStyles'  => true,
+        //'htmlSpecialCharsDecode' => true,
+    ];
+
+    const PARSER_RAW = [
+        'cleanupInput'  => false,
+        'removeScripts' => false,
+        'removeStyles'  => false,
+    ];
+
     /**
      * @param \Pckg\Parser\ParserInterface $parser
      * @param string                       $url
@@ -38,14 +51,9 @@ class Curl extends AbstractDriver implements DriverInterface
         return $listings;
     }
 
-    public function getCurlParserOptions()
+    public function makeDom(string $html, $options = self::PARSER_DEFAULT)
     {
-        return [
-            'cleanupInput'  => true,
-            'removeScripts' => true,
-            'removeStyles'  => true,
-            //'htmlSpecialCharsDecode' => true,
-        ];
+        return (new Dom())->setOptions($options)->loadStr($html);
     }
 
     /**
@@ -63,9 +71,9 @@ class Curl extends AbstractDriver implements DriverInterface
         $selector = array_keys($structure)[0];
         $selectors = $structure[$selector];
 
-        $options = $this->getCurlParserOptions();
-
-        if (strpos($selector, 'json:') === 0) {
+        $options = [];
+        $isJson = strpos($selector, 'json:') === 0;
+        if ($isJson) {
             $this->trigger('debug', 'Using raw / unclean input');
             $options = [
                 'cleanupInput'  => false,
@@ -73,12 +81,12 @@ class Curl extends AbstractDriver implements DriverInterface
                 'removeStyles'  => false,
             ];
         }
-        $dom = (new Dom())->setOptions($options)->loadStr($html);
+        $dom = $this->makeDom($html, $options);
 
         /**
          * We have simple JSON element with all the data.
          */
-        if (strpos($selector, 'json:') === 0) {
+        if ($isJson) {
             $finalSelector = substr($selector, 5);
             $element = $dom->find($finalSelector, 0);
             if (!$element) {
@@ -178,15 +186,10 @@ class Curl extends AbstractDriver implements DriverInterface
         foreach ($structure as $selector => $details) {
             try {
                 if (!$dom) {
-                    $options = $this->getCurlParserOptions();
-
+                    $options = static::PARSER_DEFAULT;
                     if (strpos($selector, 'json:') === 0) {
                         $this->trigger('debug', 'Using raw / unclean input');
-                        $options = [
-                            'cleanupInput'  => false,
-                            'removeScripts' => false,
-                            'removeStyles'  => false,
-                        ];
+                        $options = static::PARSER_RAW;
                     }
 
                     $dom = (new Dom())->setOptions($options)->loadStr($html);
@@ -217,7 +220,7 @@ class Curl extends AbstractDriver implements DriverInterface
      * @return mixed|\Pckg\Manager\Cache
      * @throws \Exception
      */
-    protected function getHttp200($url)
+    public function getHttp200($url)
     {
         return cache(AbstractSource::class . '.getHttp200.' . sha1($url), function() use ($url) {
             $this->trigger('debug', 'Not using cache for ' . $url);

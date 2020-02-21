@@ -53,7 +53,7 @@ class CurlNode extends AbstractNode implements NodeInterface
      * @param      $selector
      * @param null $nth
      *
-     * @return \Pckg\Collection|\Pckg\Parser\Node\\PHPHtmlParser\Dom\AbstractNode|NodeInterface
+     * @return \Pckg\Collection|\Pckg\Parser\Node\AbstractNode\PHPHtmlParser\Dom\AbstractNode|NodeInterface
      * @throws \PHPHtmlParser\Exceptions\ChildNotFoundException
      */
     public function find($selector, $nth = null)
