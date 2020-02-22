@@ -2,6 +2,11 @@
 
 use PHPHtmlParser\Dom\HtmlNode;
 
+/**
+ * Class CurlNode
+ *
+ * @package Pckg\Parser\Node
+ */
 class CurlNode extends AbstractNode implements NodeInterface
 {
 
@@ -10,9 +15,9 @@ class CurlNode extends AbstractNode implements NodeInterface
      *
      * @param $node \PHPHtmlParser\Dom\AbstractNode
      */
-    public function __construct(\PHPHtmlParser\Dom\AbstractNode $node)
+    public function __construct(\PHPHtmlParser\Dom\AbstractNode $node, $selector = null)
     {
-        parent::__construct($node);
+        parent::__construct($node, $selector);
     }
 
     /**
@@ -64,11 +69,11 @@ class CurlNode extends AbstractNode implements NodeInterface
                 return null;
             }
 
-            return new CurlNode($find);
+            return new CurlNode($find, $this->selector . ' ' . $selector);
         }
 
-        return collect($this->node->find($selector, null))->map(function(HtmlNode $node) {
-            return new CurlNode($node);
+        return collect($this->node->find($selector, null))->map(function(HtmlNode $node) use ($selector) {
+            return new CurlNode($node, $this->selector . ' ' . $selector);
         });
     }
 

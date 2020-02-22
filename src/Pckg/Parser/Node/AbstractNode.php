@@ -19,13 +19,19 @@ abstract class AbstractNode implements Node\NodeInterface
     protected $node;
 
     /**
+     * @var string
+     */
+    protected $selector;
+
+    /**
      * Node constructor.
      *
      * @param $node
      */
-    public function __construct($node)
+    public function __construct($node, $selector = null)
     {
         $this->node = $node;
+        $this->selector = $selector;
     }
 
     /**
@@ -34,6 +40,14 @@ abstract class AbstractNode implements Node\NodeInterface
     public function getNode()
     {
         return $this->node;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getSelector()
+    {
+        return $this->selector;
     }
 
     /**

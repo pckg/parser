@@ -16,6 +16,11 @@ interface NodeInterface
      * @return mixed|RemoteWebDriver|HtmlNode
      */
     public function getNode();
+
+    /**
+     * @return string|null
+     */
+    public function getSelector();
     
     /**
      * @return string|null

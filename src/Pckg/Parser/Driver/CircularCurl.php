@@ -37,7 +37,7 @@ class CircularCurl extends Curl
                 $props = [];
                 foreach ($struct as $selector => $prop) {
                     try {
-                        $elementNode = $this->makeNode($content->find($selector, $i));
+                        $elementNode = $this->makeNode($content->find($selector, $i), $selector);
                         if (!$elementNode) {
                             continue;
                         }

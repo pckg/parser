@@ -89,10 +89,10 @@ class Curl extends AbstractDriver implements DriverInterface
         if ($isJson) {
             $finalSelector = substr($selector, 5);
             $element = $dom->find($finalSelector, 0);
-            if (!$element) {
+            if (!$this->found($finalSelector, $element)) {
                 throw new \Exception('No JSON element ' . $finalSelector);
             }
-            $script = new CurlNode($element);
+            $script = $this->makeNode($element, $finalSelector);
 
             /**
              * Selector is actually a single callback when JSON is expected.
@@ -112,13 +112,14 @@ class Curl extends AbstractDriver implements DriverInterface
             return [];
         }
 
-        return $listings->map(function(Dom\AbstractNode $node, $i) use ($selectors) {
+        return $listings->map(function(Dom\AbstractNode $node, $i) use ($selectors, $selector) {
             try {
                 $props = [];
 
-                foreach ($selectors as $selector => $details) {
+                foreach ($selectors as $subSelector => $details) {
                     try {
-                        $this->processSectionByStructure($this->makeNode($node), $selector, $details, $props);
+                        $this->processSectionByStructure($this->makeNode($node, $selector), $subSelector, $details,
+                                                         $props);
                     } catch (SkipException $e) {
                         throw $e;
                     } catch (\Throwable $e) {
@@ -222,7 +223,7 @@ class Curl extends AbstractDriver implements DriverInterface
      */
     public function getHttp200($url)
     {
-        return cache(AbstractSource::class . '.getHttp200.' . sha1($url), function() use ($url) {
+        $response = cache(AbstractSource::class . '.getHttp200.' . sha1($url), function() use ($url) {
             $this->trigger('debug', 'Not using cache for ' . $url);
             $client = $this->getHttpClient();
             $options = [
@@ -259,6 +260,8 @@ class Curl extends AbstractDriver implements DriverInterface
              */
             return $response->getBody()->getContents();
         }, 'app', '1day'); // cache for 24h?
+
+        return $response;
     }
 
     /**

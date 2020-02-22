@@ -47,6 +47,6 @@ interface HtmlDriverInterface extends DriverInterface
      *
      * @return \Pckg\Parser\Node\NodeInterface
      */
-    public function makeNode($node);
+    public function makeNode($node, $selector = null);
 
 }

@@ -66,9 +66,26 @@ abstract class AbstractDriver implements DriverInterface
         return $this->source->getDispatcher();
     }
 
+    /**
+     * @param string $event
+     * @param        $data
+     *
+     * @return Dispatcher|null
+     */
     public function trigger(string $event, $data)
     {
         return $this->getDispatcher()->trigger($event, $data);
+    }
+
+    /**
+     * @param      $selector
+     * @param bool $found
+     */
+    public function found($selector, $found)
+    {
+        $this->trigger('node.' . ($found ? 'found' : 'notFound'), trim($selector));
+
+        return !!$found;
     }
 
 }

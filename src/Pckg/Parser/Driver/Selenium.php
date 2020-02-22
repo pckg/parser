@@ -115,13 +115,13 @@ class Selenium extends AbstractDriver implements DriverInterface
         /**
          * Parse them.
          */
-        return $listings->map(function($node) use ($selectors) {
+        return $listings->map(function($node) use ($selectors, $listingsSelector) {
             try {
                 $props = [];
 
                 foreach ($selectors as $selector => $details) {
                     try {
-                        $this->processSectionByStructure($this->makeNode($node), $selector, $details, $props);
+                        $this->processSectionByStructure($this->makeNode($node, $listingsSelector), $selector, $details, $props);
                     } catch (SkipException $e) {
                         throw $e;
                     } catch (\Throwable $e) {

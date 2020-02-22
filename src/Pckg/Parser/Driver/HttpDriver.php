@@ -45,9 +45,7 @@ trait HttpDriver
             /**
              * Collect data for healthcheck.
              */
-            if (!$jsonNode) {
-                $this->trigger('node.notFound', $selector);
-
+            if (!$this->found($node->getSelector() . ' ' . $selector, $jsonNode)) {
                 return;
             }
 
@@ -79,9 +77,7 @@ trait HttpDriver
             /**
              * Collect data for healthcheck.
              */
-            if (!$nodes->count()) {
-                $this->trigger('node.notFound', $selector);
-
+            if (!$this->found($node->getSelector() . ' ' . $selector, $nodes->count() > 0)) {
                 return;
             }
 
@@ -148,9 +144,7 @@ trait HttpDriver
          * Actual selector was passed.
          */
         $section = $node->find($getter, 0);
-        if (!$section) {
-            $this->trigger('node.notFound', $getter);
-
+        if (!$this->found($node->getSelector() . ' ' . $getter, $section)) {
             return;
         }
 
@@ -192,7 +186,7 @@ trait HttpDriver
      *
      * @return null|\Pckg\Parser\Node\NodeInterface
      */
-    public function makeNode($node)
+    public function makeNode($node, $selector = null)
     {
         if (!$node) {
             return null;
@@ -200,7 +194,7 @@ trait HttpDriver
 
         $nodeProxy = $this->node;
 
-        return new $nodeProxy($node);
+        return new $nodeProxy($node, $selector);
     }
 
 }
