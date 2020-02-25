@@ -1,6 +1,7 @@
 <?php namespace Pckg\Parser\Driver;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Response;
 use Pckg\Parser\SkipException;
 use PHPHtmlParser\Dom;
 use Pckg\Parser\Source\SourceInterface;
@@ -225,22 +226,7 @@ class Curl extends AbstractDriver implements DriverInterface
     {
         $response = cache(AbstractSource::class . '.getHttp200.' . sha1($url), function() use ($url) {
             $this->trigger('debug', 'Not using cache for ' . $url);
-            $client = $this->getHttpClient();
-            $options = [
-                'headers' => [
-                    'User-Agent'      => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36',
-                    'Accept-Language' => 'en,en-US;q=0.9,en;q=0.8',
-                    'Accept-Encoding' => 'gzip, deflate', // br
-                ],
-            ];
-
-            /**
-             * Check for proxy. This is usually a Selenium Hub.
-             */
-            $proxy = $this->getHttpProxy();
-            if ($proxy) {
-                $options['proxy'] = 'http://' . $proxy;
-            }
+            [$client, $options] = $this->getClientAndOptions();
 
             /**
              * Make CURL request.
@@ -262,6 +248,70 @@ class Curl extends AbstractDriver implements DriverInterface
         }, 'app', '1day'); // cache for 24h?
 
         return $response;
+    }
+
+    /**
+     * @param $url
+     *
+     * @return mixed|\Pckg\Manager\Cache
+     * @throws \Exception
+     */
+    public function postHttp200($url, $formData, $preOptions = [])
+    {
+        $response = cache(AbstractSource::class . '.postHttp200.' . sha1($url . json_encode($formData)), function() use ($url, $formData, $preOptions) {
+            $this->trigger('debug', 'Not using cache for ' . $url);
+            [$client, $options] = $this->getClientAndOptions();
+            $options = array_merge($preOptions, $options);
+
+            /**
+             * Make CURL request.
+             */
+            $options['form_params'] = $formData;
+            $options['allow_redirects'] = false;
+            $response = $client->post($url, $options);
+
+            /**
+             * Expect code 200. This may be driver or source dependant?
+             * @var $response Response
+             * @var $client Client
+             */
+            $code = $response->getStatusCode();
+            if ($code === 301) {
+                return $response->getHeaderLine('Location');
+            }
+
+            if ($code !== 200) {
+                throw new \Exception('HTTP code not 200 (' . $code . ')');
+            }
+
+            /**
+             * Extract HTML from response.
+             */
+            return $response->getBody()->getContents();
+        }, 'app', '1day'); // cache for 24h?
+
+        return $response;
+    }
+
+    protected function getClientAndOptions()
+    {
+        $client = $this->getHttpClient();
+        $options = [
+            'headers' => [
+                'User-Agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36',
+                'Accept-Language' => 'en,en-US;q=0.9,en;q=0.8',
+                'Accept-Encoding' => 'gzip, deflate', // br
+            ],
+        ];
+
+        /**
+         * Check for proxy. This is usually a Selenium Hub.
+         */
+        $proxy = $this->getHttpProxy();
+        if ($proxy) {
+            $options['proxy'] = 'http://' . $proxy;
+        }
+        return [$client, $options];
     }
 
     /**
