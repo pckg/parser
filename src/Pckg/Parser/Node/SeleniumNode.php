@@ -16,16 +16,6 @@ class SeleniumNode extends AbstractNode implements NodeInterface
     protected $node;
 
     /**
-     * Node constructor.
-     *
-     * @param $node RemoteWebElement
-     */
-    public function __construct(RemoteWebElement $node)
-    {
-        parent::__construct($node);
-    }
-
-    /**
      * @return string
      */
     public function getInnerHtml()

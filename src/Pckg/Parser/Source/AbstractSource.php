@@ -24,9 +24,7 @@ abstract class AbstractSource implements SourceInterface
     /**
      * @var string
      */
-    protected $driver = Curl::class;
-
-    protected $driverObject;
+    protected $key = 'abstract';
 
     /**
      * @var PageInterface|null
@@ -37,16 +35,6 @@ abstract class AbstractSource implements SourceInterface
      * @var SearchInterface
      */
     protected $search;
-
-    /**
-     * @var int
-     */
-    protected $subPages = 5;
-
-    /**
-     * @var string
-     */
-    protected $base;
 
     /**
      * @var Dispatcher
@@ -82,27 +70,6 @@ abstract class AbstractSource implements SourceInterface
     }
 
     /**
-     * @return string
-     */
-    public function getBaseUrl()
-    {
-        return $this->base;
-    }
-
-    public function makeBaseUrl($value)
-    {
-        if (strpos($value, 'https://') === 0 || strpos($value, 'http://') === 0) {
-            return $value;
-        }
-
-        if ($value && substr($value, 0, 1) !== '/') {
-            $value = '/' . $value;
-        }
-
-        return $this->base . $value;
-    }
-
-    /**
      * @param mixed $capability
      *
      * @return bool
@@ -120,28 +87,6 @@ abstract class AbstractSource implements SourceInterface
         }
 
         return true;
-    }
-
-    /**
-     * @return AbstractDriver|DriverInterface
-     */
-    public function getDriver()
-    {
-        if ($this->driverObject) {
-            return $this->driverObject;
-        }
-
-        $driver = $this->driver;
-
-        return $this->driverObject = new $driver($this);
-    }
-
-    /**
-     * @return string
-     */
-    public function getDriverClass()
-    {
-        return $this->driver;
     }
 
     /**
@@ -195,68 +140,11 @@ abstract class AbstractSource implements SourceInterface
     }
 
     /**
-     * @var string
-     */
-    protected $key = 'abstract';
-
-    /**
      * @return string
      */
     public function getKey()
     {
         return $this->key;
-    }
-
-    /**
-     * @param SearchInterface $search
-     */
-    public function processIndexParse($url)
-    {
-        try {
-            /**
-             * Get initial listings.
-             * Search additional page processing in same process.
-             */
-            $this->page->updateStatus('processing');
-
-            /**
-             * Fetch and parse listings with specified driver.
-             */
-            $listings = $this->getDriver()->getListings($url);
-
-            /**
-             * Save listings to the page.
-             */
-            $this->trigger('parse.log', 'Processing listings');
-            $this->page->processListings($listings);
-            $this->trigger('parse.log', 'Listings processed');
-
-            /**
-             * Check pagination.
-             */
-            $nextPage = ($this->page->getPage() ?? 1) + 1;
-            if ($listings && $this->shouldContinueToNextPage($nextPage)) {
-                $this->trigger('debug', 'Continuing with next page');
-                $url = $this->buildIndexUrl($nextPage);
-                $this->page = $this->page->clone(['page' => $nextPage, 'url' => $url]);
-                $this->processIndexParse($url); // recursive call
-            } else {
-                $this->trigger('debug', 'Finished with sub-pages');
-            }
-
-        } catch (\Throwable $e) {
-            $this->trigger('parse.exception', $e);
-            $this->page->updateStatus('error');
-        }
-    }
-
-    public function processListingParse(ResultInterface $result)
-    {
-        $result->updateStatus('parsing');
-
-        $props = $this->getDriver()->getListingProps($result->getUrl());
-
-        $this->page->processListing($result, $props);
     }
 
     public function afterListingParse($driver, $listing, ...$params)
@@ -295,35 +183,6 @@ abstract class AbstractSource implements SourceInterface
          * This is where our index or search page was parsed and we are trying to parse additional sources.
          * Sources that would like to be searched over Google SERPs API are parsed here.
          */
-    }
-
-    public function firewall($url)
-    {
-        d('firewall: ' . $url);
-        $this->getDriver()->getClient()->get($url);
-    }
-
-    /**
-     * @param array $props
-     * @param array $meta
-     *
-     * @return mixed
-     */
-    public function getScore(array $props = [], array $meta = [])
-    {
-        return $this->getPage()->getScore($props, $meta);
-    }
-
-    /**
-     * @param SearchSource $searchSource
-     * @param array        $props
-     * @param array        $meta
-     *
-     * @return mixed
-     */
-    public function isMatch(array $props = [], array $meta = [], &$by = null)
-    {
-        return $this->getPage()->isMatch($props, $meta, $by);
     }
 
     /**

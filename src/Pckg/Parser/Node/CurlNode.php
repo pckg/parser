@@ -11,16 +11,6 @@ class CurlNode extends AbstractNode implements NodeInterface
 {
 
     /**
-     * Node constructor.
-     *
-     * @param $node \PHPHtmlParser\Dom\AbstractNode
-     */
-    public function __construct(\PHPHtmlParser\Dom\AbstractNode $node, $selector = null)
-    {
-        parent::__construct($node, $selector);
-    }
-
-    /**
      * @return string
      */
     public function getInnerHtml()

@@ -142,10 +142,10 @@ class Selenium extends AbstractDriver implements DriverInterface
     {
         d('parsing structure');
         $structure = $this->source->getListingStructure();
+        $htmlNode = $this->makeNode($this->getClient()->findElement(WebDriverBy::cssSelector('html')));
         foreach ($structure as $selector => $details) {
             try {
-                $this->processSectionByStructure($this->makeNode($this->getClient()->findElement(WebDriverBy::cssSelector('body'))),
-                                                 $selector, $details, $props);
+                $this->processSectionByStructure($htmlNode, $selector, $details, $props);
             } catch (\Throwable $e) {
                 d('exception parsing node selector ', $selector, exception($e));
             }
@@ -162,7 +162,7 @@ class Selenium extends AbstractDriver implements DriverInterface
     {
         try {
             $props = [];
-            $this->getClient()->get($url);
+            $this->getSeleniumClient()->get($url);
             $this->autoParseListing($props);
 
             return $props;
