@@ -70,4 +70,12 @@ abstract class AbstractNode implements Node\NodeInterface
         return stringify($this->getAttribute('class'))->explodeToCollection(' ')->has($class);
     }
 
+    /**
+     * @return bool
+     */
+    public function isTextNode()
+    {
+        return $this->getTagName() === 'text';
+    }
+
 }

@@ -52,7 +52,7 @@ trait HttpDriver
             try {
                 $raw = $jsonNode->getInnerHtml();
                 $json = json_decode($raw, true, 10, JSON_PARTIAL_OUTPUT_ON_ERROR);
-                $newProps = $setter($json, $raw);
+                $newProps = $setter($json, $raw, $jsonNode);
                 if ($newProps) {
                     $props = array_merge($props, $newProps);
                 }
