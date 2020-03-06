@@ -98,7 +98,8 @@ class Curl extends AbstractDriver implements DriverInterface
             /**
              * Selector is actually a single callback when JSON is expected.
              */
-            return $selectors(json_decode($script->getInnerText(), true));
+            $raw = $script->getInnerText();
+            return $selectors(json_decode($raw, true), $raw, $script);
         }
 
         /**
