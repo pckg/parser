@@ -76,30 +76,32 @@ class Curl extends AbstractDriver implements DriverInterface
         $isJson = strpos($selector, 'json:') === 0;
         if ($isJson) {
             $this->trigger('debug', 'Using raw / unclean input');
-            $options = [
-                'cleanupInput'  => false,
-                'removeScripts' => false,
-                'removeStyles'  => false,
-            ];
+            $options = Curl::PARSER_RAW;
         }
         $dom = $this->makeDom($html, $options);
-
+        
         /**
          * We have simple JSON element with all the data.
          */
         if ($isJson) {
-            $finalSelector = substr($selector, 5);
-            $element = $dom->find($finalSelector, 0);
-            if (!$this->found($finalSelector, $element)) {
-                throw new \Exception('No JSON element ' . $finalSelector);
-            }
-            $script = $this->makeNode($element, $finalSelector);
+            if ($selectors) {
+                $finalSelector = substr($selector, 5);
+                $element = $dom->find($finalSelector, 0);
+                if (!$this->found($finalSelector, $element)) {
+                    throw new \Exception('No JSON element ' . $finalSelector);
+                }
+                $script = $this->makeNode($element, $finalSelector);
 
-            /**
-             * Selector is actually a single callback when JSON is expected.
-             */
-            $raw = $script->getInnerText();
-            return $selectors(json_decode($raw, true), $raw, $script);
+                /**
+                 * Selector is actually a single callback when JSON is expected.
+                 */
+                $raw = $script->getInnerText();
+                $props = $selectors(json_decode($raw, true), $raw, $script);
+
+                return $props;
+            }
+            $selector = array_keys($structure)[1];
+            $selectors = $structure[$selector];
         }
 
         /**
@@ -196,6 +198,10 @@ class Curl extends AbstractDriver implements DriverInterface
                     }
 
                     $dom = (new Dom())->setOptions($options)->loadStr($html);
+
+                    if (strpos($selector, 'json:') === 0 && !$details) {
+                        continue; // skip to next selector
+                    }
                 }
 
                 $this->processSectionByStructure(new \Pckg\Parser\Node\CurlNode($dom->find('html', 0)), $selector,
