@@ -115,23 +115,30 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
             $this->trigger('parse.log', 'Processing listings');
             $this->page->processListings($listings);
             $this->trigger('parse.log', 'Listings processed');
+        } catch (\Throwable $e) {
+            $this->trigger('parse.exception', $e);
+            $this->page->updateStatus('error');
+        }
 
+        try {
             /**
              * Check pagination.
              */
             $nextPage = ($this->page->getPage() ?? 1) + 1;
             if ($listings && $this->shouldContinueToNextPage($nextPage)) {
-                $this->trigger('debug', 'Continuing with next page');
-                $url = $this->buildIndexUrl($nextPage);
-                $this->page = $this->page->clone(['page' => $nextPage, 'url' => $url]);
-                $this->processIndexParse($url); // recursive call
+                if ($url !== $newUrl) {
+                    $this->trigger('debug', 'Continuing with next page');
+                    $newUrl = $this->buildIndexUrl($nextPage);
+                    $this->page = $this->page->clone(['page' => $nextPage, 'url' => $newUrl]);
+                    $this->processIndexParse($url); // recursive call
+                } else {
+                    $this->trigger('debug', 'Same sub-page URL, skipping');
+                }
             } else {
                 $this->trigger('debug', 'Finished with sub-pages');
             }
-
         } catch (\Throwable $e) {
             $this->trigger('parse.exception', $e);
-            $this->page->updateStatus('error');
         }
     }
 
