@@ -131,9 +131,9 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
              */
             $nextPage = ($this->page->getPage() ?? 1) + 1;
             if ($this->shouldContinueToNextPage($nextPage)) {
+                $newUrl = $this->buildIndexUrl($nextPage);
                 if ($url !== $newUrl) {
                     $this->trigger('debug', 'Continuing with next page');
-                    $newUrl = $this->buildIndexUrl($nextPage);
                     $this->page = $this->page->clone(['page' => $nextPage, 'url' => $newUrl]);
                     $this->processIndexParse($url); // recursive call
                 } else {
