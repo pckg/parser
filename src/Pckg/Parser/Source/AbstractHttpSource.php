@@ -120,12 +120,17 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
             $this->page->updateStatus('error');
         }
 
+        if (!$listings) {
+            $this->trigger('debug', 'No listings found');
+            return;
+        }
+
         try {
             /**
              * Check pagination.
              */
             $nextPage = ($this->page->getPage() ?? 1) + 1;
-            if ($listings && $this->shouldContinueToNextPage($nextPage)) {
+            if ($this->shouldContinueToNextPage($nextPage)) {
                 if ($url !== $newUrl) {
                     $this->trigger('debug', 'Continuing with next page');
                     $newUrl = $this->buildIndexUrl($nextPage);
