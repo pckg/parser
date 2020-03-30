@@ -88,7 +88,7 @@ trait HttpDriver
                     throw $e;
                 } catch (\Throwable $e) {
                     $this->trigger('parse.exception',
-                                   new \Exception('Exception processing node selector ' . $se . ' index ' . $i, null,
+                                   new \Exception('Exception processing node selector ' . $selector . ' index ' . $i, null,
                                                   $e));
                 }
             });

@@ -238,7 +238,18 @@ class Curl extends AbstractDriver implements DriverInterface
             /**
              * Make CURL request.
              */
-            $response = $client->get($url, $options);
+            try {
+                $response = $client->get($url, $options);
+            } catch (\Throwable $e) {
+                if (isset($options['proxy']) && strpos($e->getMessage(), 'CONNECT')) {
+                    $this->trigger('proxy.error', $options['proxy']);
+                }
+                throw $e;
+            }
+
+            if (isset($options['proxy'])) {
+                $this->trigger('proxy.success', $options['proxy']);
+            }
 
             /**
              * Expect code 200. This may be driver or source dependant?
@@ -275,7 +286,18 @@ class Curl extends AbstractDriver implements DriverInterface
              */
             $options['form_params'] = $formData;
             $options['allow_redirects'] = false;
-            $response = $client->post($url, $options);
+            try {
+                $response = $client->post($url, $options);
+            } catch (\Throwable $e) {
+                if (isset($options['proxy']) && strpos($e->getMessage(), 'CONNECT')) {
+                    $this->trigger('proxy.error', $options['proxy']);
+                }
+                throw $e;
+            }
+
+            if (isset($options['proxy'])) {
+                $this->trigger('proxy.success', $options['proxy']);
+            }
 
             /**
              * Expect code 200. This may be driver or source dependant?
