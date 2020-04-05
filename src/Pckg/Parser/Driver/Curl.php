@@ -15,22 +15,22 @@ class Curl extends AbstractDriver implements DriverInterface
 {
 
     const PARSER_DEFAULT = [
-        'cleanupInput'  => true,
+        'cleanupInput' => true,
         'removeScripts' => true,
-        'removeStyles'  => true,
+        'removeStyles' => true,
         //'htmlSpecialCharsDecode' => true,
     ];
 
     const PARSER_RAW = [
-        'cleanupInput'  => false,
+        'cleanupInput' => false,
         'removeScripts' => false,
-        'removeStyles'  => false,
+        'removeStyles' => false,
     ];
 
     /**
      * @param \Pckg\Parser\ParserInterface $parser
-     * @param string                       $url
-     * @param callable|null                $then
+     * @param string $url
+     * @param callable|null $then
      *
      * @return array
      * @throws \PHPHtmlParser\Exceptions\ChildNotFoundException
@@ -79,7 +79,7 @@ class Curl extends AbstractDriver implements DriverInterface
             $options = Curl::PARSER_RAW;
         }
         $dom = $this->makeDom($html, $options);
-        
+
         /**
          * We have simple JSON element with all the data.
          */
@@ -116,14 +116,14 @@ class Curl extends AbstractDriver implements DriverInterface
             return [];
         }
 
-        return $listings->map(function(Dom\AbstractNode $node, $i) use ($selectors, $selector) {
+        return $listings->map(function (Dom\AbstractNode $node, $i) use ($selectors, $selector) {
             try {
                 $props = [];
 
                 foreach ($selectors as $subSelector => $details) {
                     try {
                         $this->processSectionByStructure($this->makeNode($node, $selector), $subSelector, $details,
-                                                         $props);
+                            $props);
                     } catch (SkipException $e) {
                         throw $e;
                     } catch (\Throwable $e) {
@@ -141,7 +141,7 @@ class Curl extends AbstractDriver implements DriverInterface
     }
 
     /**
-     * @param array  $structure
+     * @param array $structure
      * @param string $url
      *
      * @return array
@@ -169,7 +169,7 @@ class Curl extends AbstractDriver implements DriverInterface
     }
 
     /**
-     * @param array  $structure
+     * @param array $structure
      * @param string $html
      *
      * @return array
@@ -205,7 +205,7 @@ class Curl extends AbstractDriver implements DriverInterface
                 }
 
                 $this->processSectionByStructure(new \Pckg\Parser\Node\CurlNode($dom->find('html', 0)), $selector,
-                                                 $details, $props);
+                    $details, $props);
             } catch (\Throwable $e) {
                 $this->trigger('parse.exception', new \Exception('Error parsing node selector ' . $selector, null, $e));
             }
@@ -231,24 +231,58 @@ class Curl extends AbstractDriver implements DriverInterface
      */
     public function getHttp200($url)
     {
-        $response = cache(AbstractSource::class . '.getHttp200.' . sha1($url), function() use ($url) {
+        $response = cache(AbstractSource::class . '.getHttp200.' . sha1($url), function () use ($url) {
             $this->trigger('debug', 'Not using cache for ' . $url);
-            [$client, $options] = $this->getClientAndOptions();
 
             /**
              * Make CURL request.
              */
-            try {
-                $response = $client->get($url, $options);
-            } catch (\Throwable $e) {
-                if (isset($options['proxy']) && strpos($e->getMessage(), 'CONNECT')) {
-                    $this->trigger('proxy.error', $options['proxy']);
+            $options = null;
+            $response = retry(function () use (&$options, $url) {
+                /**
+                 * We want to use a different proxy every time.
+                 */
+                if (isset($options['proxy'])) {
+                    $this->trigger('proxy.retry', $options['proxy']);
                 }
-                throw $e;
-            }
+
+                /**
+                 * Prepare HTTP client and options.
+                 */
+                [$client, $options] = $this->getClientAndOptions($options['proxy'] ?? null);
+
+                /**
+                 * Try to make a request.
+                 */
+                return $client->get($url, $options);
+            }, 1, function (\Throwable $e) use (&$options) {
+                d(exception($e));
+                /**
+                 * Do not repeat non-CONNECT errors.
+                 */
+                if (!strpos($e->getMessage(), 'CONNECT')) {
+                    return true; // end
+                }
+
+                /**
+                 * Do not repeat non-proxy requests
+                 */
+                if (!isset($options['proxy'])) {
+                    return true; // end
+                }
+
+                $this->trigger('proxy.error', $options['proxy']);
+            });
 
             if (isset($options['proxy'])) {
                 $this->trigger('proxy.success', $options['proxy']);
+            }
+
+            /**
+             * Throw an error.
+             */
+            if (!$response) {
+                throw new \Exception('Empty response');
             }
 
             /**
@@ -276,7 +310,7 @@ class Curl extends AbstractDriver implements DriverInterface
      */
     public function postHttp200($url, $formData, $preOptions = [])
     {
-        $response = cache(AbstractSource::class . '.postHttp200.' . sha1($url . json_encode($formData)), function() use ($url, $formData, $preOptions) {
+        $response = cache(AbstractSource::class . '.postHttp200.' . sha1($url . json_encode($formData)), function () use ($url, $formData, $preOptions) {
             $this->trigger('debug', 'Not using cache for ' . $url);
             [$client, $options] = $this->getClientAndOptions();
             $options = array_merge($preOptions, $options);
@@ -322,7 +356,7 @@ class Curl extends AbstractDriver implements DriverInterface
         return $response;
     }
 
-    protected function getClientAndOptions()
+    protected function getClientAndOptions($exclude = null)
     {
         $client = $this->getHttpClient();
         $options = [
@@ -336,7 +370,7 @@ class Curl extends AbstractDriver implements DriverInterface
         /**
          * Check for proxy. This is usually a Selenium Hub.
          */
-        $proxy = $this->getHttpProxy();
+        $proxy = $this->getHttpProxy($exclude);
         if ($proxy) {
             $options['proxy'] = 'http://' . $proxy;
         }

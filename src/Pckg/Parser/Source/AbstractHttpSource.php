@@ -118,6 +118,7 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
         } catch (\Throwable $e) {
             $this->trigger('parse.exception', $e);
             $this->page->updateStatus('error');
+            return;
         }
 
         if (!$listings) {

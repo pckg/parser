@@ -10,18 +10,21 @@ trait HttpDriver
     /**
      * @return mixed|void
      */
-    public function getHttpProxy()
+    public function getHttpProxy($exclude = null)
     {
         $disabled = config('scintilla.proxy.disabled', false);
         if ($disabled) {
             return;
         }
+
         $proxies = config('scintilla.proxy.servers', []);
         if (!$proxies) {
             return;
         }
 
-        return $proxies[array_rand($proxies)];
+        return collect($proxies)->filter(function ($proxy) use ($exclude) {
+            return $proxy !== $exclude;
+        })->random() ?? collect($proxies)->first();
     }
 
     /**
