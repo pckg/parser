@@ -46,6 +46,11 @@ class Curl extends AbstractDriver implements DriverInterface
         $this->trigger('page.status', 'parsing');
         $html = $this->getHttp200($url);
 
+        /**
+         * Emit response.
+         */
+        $this->trigger('index.html', $html);
+
         $listings = $this->getListingsFromHtml($this->source->getIndexStructure(), $html);
         $this->trigger('page.status', 'parsed');
 
@@ -156,6 +161,11 @@ class Curl extends AbstractDriver implements DriverInterface
          * Get HTML.
          */
         $html = $this->getHttp200($url);
+
+        /**
+         * Emit response.
+         */
+        $this->trigger('result.html', $html);
 
         $props = $this->getListingPropsFromHtml($this->source->getListingStructure(), $html);
 

@@ -49,6 +49,16 @@ interface SourceInterface
     public function getPage();
 
     /**
+     * @return ResultInterface
+     */
+    public function setResult(ResultInterface $result);
+
+    /**
+     * @return ResultInterface
+     */
+    public function getResult();
+
+    /**
      * @return mixed
      */
     public function startIndex();

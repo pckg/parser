@@ -27,14 +27,19 @@ abstract class AbstractSource implements SourceInterface
     protected $key = 'abstract';
 
     /**
+     * @var SearchInterface
+     */
+    protected $search;
+
+    /**
      * @var PageInterface|null
      */
     protected $page;
 
     /**
-     * @var SearchInterface
+     * @var ResultInterface|null
      */
-    protected $search;
+    protected $result;
 
     /**
      * @var Dispatcher
@@ -124,6 +129,18 @@ abstract class AbstractSource implements SourceInterface
     }
 
     /**
+     * @param ResultInterface $result
+     *
+     * @return $this
+     */
+    public function setResult(ResultInterface $result)
+    {
+        $this->result = $result;
+
+        return $this;
+    }
+
+    /**
      * @return mixed|SearchInterface
      */
     public function getSearch()
@@ -137,6 +154,14 @@ abstract class AbstractSource implements SourceInterface
     public function getPage()
     {
         return $this->page;
+    }
+
+    /**
+     * @return ResultInterface|null
+     */
+    public function getResult()
+    {
+        return $this->result;
     }
 
     /**
