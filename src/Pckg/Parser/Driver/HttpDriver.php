@@ -1,6 +1,7 @@
 <?php namespace Pckg\Parser\Driver;
 
 use Facebook\WebDriver\Exception\InvalidSelectorException;
+use GuzzleHttp\Client;
 use Pckg\Parser\Node\NodeInterface;
 use Pckg\Parser\SkipException;
 
@@ -17,14 +18,33 @@ trait HttpDriver
             return;
         }
 
-        $proxies = config('scintilla.proxy.servers', []);
+        $source = config('scintilla.proxy.httpSource', null);
+        $proxies = [];
+        if ($source) {
+            try {
+                $response = cache(HttpDriver::class . ':getHttpProxy', function () {
+                    $client = new Client();
+                    $client->get($source);
+                    return $response->getBody()->getContents();
+                }, 'app', '1day');
+                $decoded = json_decode($response, true);
+                $proxies = $decoded;
+            } catch (\Throwable $e) {
+                $this->trigger('parse.exception', $e);
+            }
+        }
+
+        if (!$proxies) {
+            $proxies = config('scintilla.proxy.servers', []);
+        }
+
         if (!$proxies) {
             return;
         }
 
         return collect($proxies)->filter(function ($proxy) use ($exclude) {
-            return $proxy !== $exclude;
-        })->random() ?? collect($proxies)->first();
+                return $proxy !== $exclude;
+            })->random() ?? collect($proxies)->first();
     }
 
     /**
@@ -63,7 +83,7 @@ trait HttpDriver
                 throw $e;
             } catch (\Throwable $e) {
                 $this->trigger('parse.exception',
-                               new \Exception('Exception processing node selector ' . $selector, null, $e));
+                    new \Exception('Exception processing node selector ' . $selector, null, $e));
             }
 
             return;
@@ -84,15 +104,15 @@ trait HttpDriver
                 return;
             }
 
-            $nodes->each(function(NodeInterface $node, $i) use ($setter, &$props, $selector) {
+            $nodes->each(function (NodeInterface $node, $i) use ($setter, &$props, $selector) {
                 try {
                     $this->processSectionByStructure($node, '&', $setter, $props);
                 } catch (SkipException $e) {
                     throw $e;
                 } catch (\Throwable $e) {
                     $this->trigger('parse.exception',
-                                   new \Exception('Exception processing node selector ' . $selector . ' index ' . $i, null,
-                                                  $e));
+                        new \Exception('Exception processing node selector ' . $selector . ' index ' . $i, null,
+                            $e));
                 }
             });
 
@@ -179,7 +199,7 @@ trait HttpDriver
                 throw $e;
             } catch (\Throwable $e) {
                 $this->trigger('parse.exception',
-                               new \Exception('Error processing section ' . $getter . ' ' . $get, null, $e));
+                    new \Exception('Error processing section ' . $getter . ' ' . $get, null, $e));
             }
         }
     }
