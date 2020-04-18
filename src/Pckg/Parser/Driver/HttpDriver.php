@@ -22,9 +22,12 @@ trait HttpDriver
         $proxies = [];
         if ($source) {
             try {
-                $response = cache(HttpDriver::class . ':getHttpProxy', function () {
+                $response = cache(HttpDriver::class . ':getHttpProxy', function () use ($source) {
                     $client = new Client();
-                    $client->get($source);
+                    $response = $client->get($source);
+                    if ($response->getStatusCode() !== 200) {
+                        throw new \Exception('Proxy list HTTP code not 200');
+                    }
                     return $response->getBody()->getContents();
                 }, 'app', '1day');
                 $decoded = json_decode($response, true);
