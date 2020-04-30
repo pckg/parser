@@ -262,6 +262,11 @@ class Curl extends AbstractDriver implements DriverInterface
                 [$client, $options] = $this->getClientAndOptions($options['proxy'] ?? null);
 
                 /**
+                 * Add alternative options.
+                 */
+                $options['headers']['Referer'] = parse_url($url, PHP_URL_SCHEME) . '://' . parse_url($url, PHP_URL_HOST) . '/';
+
+                /**
                  * Try to make a request.
                  */
                 return $client->get($url, $options);

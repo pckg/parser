@@ -13,9 +13,12 @@ use Pckg\Parser\ParserInterface;
 use Pckg\Parser\Driver\AbstractDriver;
 use Pckg\Parser\Driver\DriverInterface;
 use Pckg\Parser\Source\SourceInterface;
+use Scintilla\Parser\Utils\SeleniumHelper;
 
 class Selenium extends AbstractDriver implements DriverInterface
 {
+
+    use SeleniumHelper;
 
     protected $node = SeleniumNode::class;
 
@@ -83,8 +86,8 @@ class Selenium extends AbstractDriver implements DriverInterface
 
             return $listings;
         } catch (\Throwable $e) {
+            $this->trigger('parse.exception', $e);
             $selenium->takeScreenshot(path('uploads') . 'selenium/last.png');
-            d(exception($e));
         }
 
         return [];
@@ -133,26 +136,24 @@ class Selenium extends AbstractDriver implements DriverInterface
 
                 return $props;
             } catch (\Throwable $e) {
-                d('EXCEPTION [parsing index listing]' . exception($e));
+                $this->trigger('parse.exception', $e);
             }
         })->removeEmpty()->rekey()->all();
     }
 
     public function autoParseListing(&$props)
     {
-        d('parsing structure');
         $structure = $this->source->getListingStructure();
         $htmlNode = $this->makeNode($this->getClient()->findElement(WebDriverBy::cssSelector('html')));
         foreach ($structure as $selector => $details) {
             try {
                 $this->processSectionByStructure($htmlNode, $selector, $details, $props);
             } catch (\Throwable $e) {
-                d('exception parsing node selector ', $selector, exception($e));
+                $this->trigger('parse.exception', $e);
             }
         }
-        d('parsed');
+
         $this->source->afterListingParse($this->getClient(), $props);
-        d('parsed sub');
     }
 
     /**
@@ -162,13 +163,17 @@ class Selenium extends AbstractDriver implements DriverInterface
     {
         try {
             $props = [];
-            $this->getSeleniumClient()->get($url);
+            $selenium = $this->getSeleniumClient();
+            $selenium->get($url);
+            $selenium->wait(5);
+            sleep(5);
+            $this->takeScreenshot($selenium);
             $this->autoParseListing($props);
-
-            return $props;
         } catch (\Throwable $e) {
-            d("getlistingprops", exception($e));
+            $this->trigger('parse.exception', $e);
         }
+
+        return $props;
     }
 
     /**
