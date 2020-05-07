@@ -165,7 +165,7 @@ class Curl extends AbstractDriver implements DriverInterface
         /**
          * Emit response.
          */
-        $this->trigger('result.html', $html);
+        $this->trigger('listing.html', $html);
 
         $props = $this->getListingPropsFromHtml($this->source->getListingStructure(), $html);
 
