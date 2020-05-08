@@ -214,7 +214,11 @@ class Curl extends AbstractDriver implements DriverInterface
                     }
                 }
 
-                $this->processSectionByStructure(new \Pckg\Parser\Node\CurlNode($dom->find('html', 0)), $selector,
+                $element = $dom->find('html', 0);
+                if (!$element) {
+                    $element = $dom->find('body', 0); // disables head // a1s
+                }
+                $this->processSectionByStructure(new \Pckg\Parser\Node\CurlNode($element), $selector,
                     $details, $props);
             } catch (\Throwable $e) {
                 $this->trigger('parse.exception', new \Exception('Error parsing node selector ' . $selector, null, $e));
