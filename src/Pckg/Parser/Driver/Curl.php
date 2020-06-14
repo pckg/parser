@@ -27,6 +27,15 @@ class Curl extends AbstractDriver implements DriverInterface
         'removeStyles' => false,
     ];
 
+    protected $customGetter;
+
+    public function setCustomListingsGetter(callable $callable)
+    {
+        $this->customGetter = $callable;
+
+        return $this;
+    }
+
     /**
      * @param \Pckg\Parser\ParserInterface $parser
      * @param string $url
@@ -44,7 +53,8 @@ class Curl extends AbstractDriver implements DriverInterface
          * Get HTML.
          */
         $this->trigger('page.status', 'parsing');
-        $html = $this->getHttp200($url);
+        $html = $this->customGetter ? ($this->customGetter)($url) : $this->getHttp200($url);
+        d($html);
 
         /**
          * Emit response.
