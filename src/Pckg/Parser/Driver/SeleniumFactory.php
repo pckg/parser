@@ -20,6 +20,8 @@ class SeleniumFactory
         }
         $capabilities = DesiredCapabilities::chrome();
         $options = new ChromeOptions();
+        $agents = config('pckg.parser.agents', []);
+        $agent = $agents[array_rand($agents)];
         $options->addArguments([
                                    '--disable-dev-shm-usage',
                                    '--whitelisted-ips',
@@ -32,8 +34,8 @@ class SeleniumFactory
                                    //'headless',
                                    'start-maximized',
                                    'disable-infobar',
-                                   '--lang=sl_SI',
-                                   '--user-agent=Mozilla/5.0 (X11; Linux x86_64)AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.39 Safari/537.36',
+                                   '--lang=en_US',
+                                   '--user-agent=' . $agent,
                                ]);
         $capabilities->setCapability(ChromeOptions::CAPABILITY, $options);
         //$capabilities->setCapability('idleTimeout', 10); // zalenium

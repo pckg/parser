@@ -146,6 +146,11 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
         } catch (\Throwable $e) {
             $this->trigger('parse.exception', $e);
         }
+
+        /**
+         * Now we can close the driver.
+         */
+        $this->getDriver()->close();
     }
 
     public function processListingParse(ResultInterface $result)
