@@ -26,8 +26,6 @@ interface HttpSourceInterface
      */
     public function processIndexParse($url);
 
-    public function afterIndexParse();
-
     /**
      * @return array
      */

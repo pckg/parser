@@ -4,67 +4,135 @@ use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\Remote\WebDriverCapabilityType;
+use GuzzleHttp\Client;
+use Pckg\Framework\Helper\Retry;
 
 class SeleniumFactory
 {
 
+    /**
+     * @var string
+     */
     protected static $host = 'http://selenium-hub:4444/wd/hub';
+
+    /**
+     * @return array|callable|mixed|\Pckg\Framework\Config|null
+     */
+    private static function getHost($host)
+    {
+        if ($host) {
+            return $host;
+        }
+
+        return config('pckg.parser.host', static::$host);
+    }
 
     /**
      * @return RemoteWebDriver
      */
     public static function getSeleniumClient($host = null, $proxy = null)
     {
-        if (!$host) {
-            $host = static::$host;
-        }
-        $capabilities = DesiredCapabilities::chrome();
-        $options = new ChromeOptions();
-        $agents = config('pckg.parser.agents', []);
-        $agent = $agents[array_rand($agents)];
-        $options->addArguments([
-                                   '--disable-dev-shm-usage',
-                                   '--whitelisted-ips',
-                                   '--disable-extensions',
-                                   '--no-sandbox',
-                                   '--verbose',
-                                   '--disable-gpu',
-                                   //'--headless',
-                                   '--window-size=1280,1024',
-                                   //'headless',
-                                   'start-maximized',
-                                   'disable-infobar',
-                                   '--lang=en_US',
-                                   '--user-agent=' . $agent,
-                               ]);
-        $capabilities->setCapability(ChromeOptions::CAPABILITY, $options);
-        //$capabilities->setCapability('idleTimeout', 10); // zalenium
-        //$capabilities->setCapability('screenResolution', '360x720'); // zalenium
-        //$capabilities->setCapability('redordVideo', true); // zalenium
+        $host = static::getHost($host);
 
         /**
-         * Select random proxy.
+         * Retry for 20 times in the interval of 6s to get a connection.
          */
-        if ($proxy) {
-            $capabilities->setCapability(WebDriverCapabilityType::PROXY, [
-                'proxyType' => 'manual',
-                'httpProxy' => 'http://' . $proxy,
-                'sslProxy'  => 'http://' . $proxy,
-            ]);
-        }
+        return (new Retry())->interval(10)
+            ->retry(10)
+            ->make(function () use ($host, $proxy) {
+                /**
+                 * Emit event so apps can implement capacity limiters.
+                 */
+                $okay = (new Retry())->interval(10)
+                    ->retry(10)
+                    ->make(function () use ($host) {
+                        $response = json_decode((new Client())->get($host . '/status')->getBody()->getContents(), true);
+                        $hasCapacity = ($response['value']['ready'] ?? null) && ($response['value']['message']) === 'Hub has capacity';
 
-        d('creating web driver');
-        try {
-            $webdriver = RemoteWebDriver::create($host, $capabilities, 10000);
-        } catch (\Throwable $e) {
-            d(exception($e), get_class($e));
-            throw $e;
-        }
-        d('web driver created');
+                        if (!$hasCapacity) {
+                            throw new \Exception('No capacity on Hub / Grid');
+                        }
 
-        $webdriver->executeScript(static::getProtectionScript());
+                        return true;
+                    });
 
-        return $webdriver;
+                if (!$okay) {
+                    throw new \Exception('Hub has no capacity after 10 retries.');
+                }
+
+                $chrome = true;
+                if ($chrome) {
+                    $capabilities = DesiredCapabilities::chrome();
+                    $options = new ChromeOptions();
+                    $agents = config('pckg.parser.agents', []);
+                    $agent = $agents[array_rand($agents)];
+                    $options->addArguments([
+                        //'--disable-dev-shm-usage',
+                        '--whitelisted-ips',
+                        '--disable-extensions',
+                        '--no-sandbox',
+                        '--verbose',
+                        '--disable-gpu',
+                        '--headless',
+                        '--window-size=1280,1024',
+                        'headless',
+                        'start-maximized',
+                        'disable-infobar',
+                        '--lang=en_US',
+                        '--user-agent=' . $agent,
+                    ]);
+                    $capabilities->setCapability(ChromeOptions::CAPABILITY, $options);
+                } else {
+                    $capabilities = DesiredCapabilities::firefox();
+                    /*$options = new FirefoxO();
+                    $agents = config('pckg.parser.agents', []);
+                    $agent = $agents[array_rand($agents)];
+                    $options->addArguments([
+                        '--disable-dev-shm-usage',
+                        //'--whitelisted-ips',
+                        '--disable-extensions',
+                        '--no-sandbox',
+                        //'--verbose',
+                        //'--disable-gpu',
+                        //'--headless',
+                        //'--window-size=1280,1024',
+                        //'headless',
+                        'start-maximized',
+                        'disable-infobar',
+                        //'--lang=en_US',
+                        //'--user-agent=' . $agent,
+                    ]);
+                    $capabilities->setCapability(ChromeOptions::CAPABILITY, $options);*/
+                }
+                //$capabilities->setCapability('idleTimeout', 10); // zalenium
+                //$capabilities->setCapability('screenResolution', '360x720'); // zalenium
+                //$capabilities->setCapability('recordVideo', true); // zalenium
+
+                /**
+                 * Select random proxy.
+                 */
+                if ($proxy) {
+                    $capabilities->setCapability(WebDriverCapabilityType::PROXY, [
+                        'proxyType' => 'manual',
+                        'httpProxy' => 'http://' . $proxy,
+                        'sslProxy' => 'http://' . $proxy,
+                    ]);
+                }
+
+                /**
+                 * Create webdriver.
+                 */
+                d('creating web driver');
+                $webdriver = RemoteWebDriver::create($host, $capabilities, 10000);
+                d('web driver created');
+
+                /**
+                 * Identify us as normal user.
+                 */
+                $webdriver->executeScript(static::getProtectionScript());
+
+                return $webdriver;
+            });
     }
 
     public static function getProtectionScript()

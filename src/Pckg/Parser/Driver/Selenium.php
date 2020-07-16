@@ -42,6 +42,7 @@ class Selenium extends AbstractDriver implements DriverInterface
     {
         if ($this->client) {
             $this->client->close();
+            $this->client = null;
         }
 
         return parent::close();
@@ -50,12 +51,13 @@ class Selenium extends AbstractDriver implements DriverInterface
     /**
      * @return RemoteWebDriver
      */
-    private function getSeleniumClient($host = null)
+    private function getSeleniumClient()
     {
         if ($this->client) {
             return $this->client;
         }
 
+        $host = config('pckg.parser.selenium.host', null);
         $proxy = $this->getHttpProxy();
 
         return $this->client = SeleniumFactory::getSeleniumClient($host, $proxy);
@@ -63,8 +65,8 @@ class Selenium extends AbstractDriver implements DriverInterface
 
     /**
      * @param ParserInterface $parser
-     * @param string          $url
-     * @param callable|null   $then
+     * @param string $url
+     * @param callable|null $then
      *
      * @return array
      */
@@ -87,7 +89,6 @@ class Selenium extends AbstractDriver implements DriverInterface
             return $listings;
         } catch (\Throwable $e) {
             $this->trigger('parse.exception', $e);
-            $selenium->takeScreenshot(path('uploads') . 'selenium/last.png');
         }
 
         return [];
@@ -95,7 +96,7 @@ class Selenium extends AbstractDriver implements DriverInterface
 
     /**
      * @param RemoteWebDriver $selenium
-     * @param array           $structure
+     * @param array $structure
      *
      * @return array
      */
@@ -106,6 +107,9 @@ class Selenium extends AbstractDriver implements DriverInterface
         $selectors = $structure[$selector];
         $listingsSelector = array_keys($structure)[0];
 
+        /**
+         * We do not close the client since it should already be initiated.
+         */
         $selenium = $this->getSeleniumClient();
         $allListings = $selenium->findElements(WebDriverBy::cssSelector($listingsSelector));
 
@@ -118,7 +122,7 @@ class Selenium extends AbstractDriver implements DriverInterface
         /**
          * Parse them.
          */
-        return $listings->map(function($node) use ($selectors, $listingsSelector) {
+        return $listings->map(function ($node) use ($selectors, $listingsSelector) {
             try {
                 $props = [];
 
@@ -161,9 +165,10 @@ class Selenium extends AbstractDriver implements DriverInterface
      */
     public function getListingProps(string $url)
     {
+        $selenium = $this->getSeleniumClient();
+
         try {
             $props = [];
-            $selenium = $this->getSeleniumClient();
             $selenium->get($url);
             $selenium->wait(5);
             sleep(5);

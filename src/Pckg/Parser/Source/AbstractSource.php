@@ -200,17 +200,6 @@ abstract class AbstractSource implements SourceInterface
     }
 
     /**
-     * @param SearchInterface $search
-     */
-    public function afterIndexParse()
-    {
-        /**
-         * This is where our index or search page was parsed and we are trying to parse additional sources.
-         * Sources that would like to be searched over Google SERPs API are parsed here.
-         */
-    }
-
-    /**
      * @param NodeInterface $node
      * @param               $props
      * @param array         $keys

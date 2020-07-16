@@ -2,6 +2,7 @@
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
+use Pckg\Framework\Helper\Retry;
 use Pckg\Parser\SkipException;
 use PHPHtmlParser\Dom;
 use Pckg\Parser\Source\SourceInterface;
@@ -262,71 +263,86 @@ class Curl extends AbstractDriver implements DriverInterface
              * Make CURL request.
              */
             $options = null;
-            $response = retry(function () use (&$options, $url) {
-                /**
-                 * We want to use a different proxy every time.
-                 */
-                if (isset($options['proxy'])) {
-                    $this->trigger('proxy.retry', $options['proxy']);
-                }
+            $lastException = null;
+            $contents = (new Retry())->retry(3)
+                ->interval(5)
+                ->onError(function (\Throwable $e) use (&$options, &$lastException) {
+                    $lastException = $e;
+                    $this->trigger('parse.exception', $e);
 
-                /**
-                 * Prepare HTTP client and options.
-                 */
-                [$client, $options] = $this->getClientAndOptions($options['proxy'] ?? null);
+                    /**
+                     * Do not repeat non-CONNECT errors.
+                     */
+                    if (!strpos($e->getMessage(), 'CONNECT')) {
+                        return true;
+                    }
 
-                /**
-                 * Add alternative options.
-                 */
-                $options['headers']['Referer'] = parse_url($url, PHP_URL_SCHEME) . '://' . parse_url($url, PHP_URL_HOST) . '/';
+                    /**
+                     * Do not repeat non-proxied requests
+                     */
+                    if (!isset($options['proxy'])) {
+                        return true;
+                    }
 
-                /**
-                 * Try to make a request.
-                 */
-                return $client->get($url, $options);
-            }, 1, function (\Throwable $e) use (&$options) {
-                $this->trigger('parse.exception', $e);
+                    $this->trigger('proxy.error', $options['proxy']);
+                })->make(function ($i) use (&$options, $url) {
+                    /**
+                     * We want to use a different proxy every time?
+                     */
+                    if ($i && isset($options['proxy'])) {
+                        $this->trigger('proxy.retry', $options['proxy']);
+                    }
 
-                /**
-                 * Do not repeat non-CONNECT errors.
-                 */
-                if (!strpos($e->getMessage(), 'CONNECT')) {
-                    return true; // end
-                }
+                    /**
+                     * Prepare HTTP client and options.
+                     */
+                    [$client, $options] = $this->getClientAndOptions($options['proxy'] ?? null);
 
-                /**
-                 * Do not repeat non-proxy requests
-                 */
-                if (!isset($options['proxy'])) {
-                    return true; // end
-                }
+                    /**
+                     * Add alternative options.
+                     */
+                    $host = parse_url($url, PHP_URL_HOST);
+                    //$options['headers']['Origin'] = $host; // not needed for get requests
+                    $options['headers']['Referer'] = parse_url($url, PHP_URL_SCHEME) . '://' . $host . '/';
 
-                $this->trigger('proxy.error', $options['proxy']);
-            });
+                    /**
+                     * Try to make a request.
+                     */
+                    $response = $client->get($url, $options);
+
+                    /**
+                     * Throw an error.
+                     */
+                    if (!$response) {
+                        throw new \Exception('Empty response');
+                    }
+
+                    /**
+                     * Expect code 200. This may be driver or source dependant?
+                     */
+                    $code = $response->getStatusCode();
+                    if ($code !== 200) {
+                        throw new \Exception('HTTP code not 200 (' . $code . ')');
+                    }
+
+                    return $response->getBody()->getContents();
+                });
+
+            /**
+             * Throw exception on error.
+             */
+            if (!$contents && $lastException) {
+                throw $lastException;
+            }
 
             if (isset($options['proxy'])) {
                 $this->trigger('proxy.success', $options['proxy']);
             }
 
             /**
-             * Throw an error.
-             */
-            if (!$response) {
-                throw new \Exception('Empty response');
-            }
-
-            /**
-             * Expect code 200. This may be driver or source dependant?
-             */
-            $code = $response->getStatusCode();
-            if ($code !== 200) {
-                throw new \Exception('HTTP code not 200 (' . $code . ')');
-            }
-
-            /**
              * Extract HTML from response.
              */
-            return $response->getBody()->getContents();
+            return $contents;
         }, 'app', '1day'); // cache for 24h?
 
         return $response;
@@ -349,7 +365,7 @@ class Curl extends AbstractDriver implements DriverInterface
              * Make CURL request.
              */
             $options['form_params'] = $formData;
-            $options['allow_redirects'] = false;
+            $options['allow_redirects'] = true; // was false ... why?
             try {
                 $response = $client->post($url, $options);
             } catch (\Throwable $e) {

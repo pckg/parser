@@ -67,7 +67,6 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
          */
         $this->beforeIndexParse();
         $this->processIndexParse($url);
-        $this->afterIndexParse();
     }
 
     /**
@@ -118,11 +117,13 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
         } catch (\Throwable $e) {
             $this->trigger('parse.exception', $e);
             $this->page->updateStatus('error');
+            $this->getDriver()->close();
             return;
         }
 
         if (!$listings) {
             $this->trigger('debug', 'No listings found');
+            $this->getDriver()->close();
             return;
         }
 
