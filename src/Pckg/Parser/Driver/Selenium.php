@@ -41,7 +41,7 @@ class Selenium extends AbstractDriver implements DriverInterface
     public function close()
     {
         if ($this->client) {
-            $this->client->close();
+            $this->client->quit();
             $this->client = null;
         }
 

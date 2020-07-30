@@ -37,10 +37,17 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
         return $this->base;
     }
 
+    /**
+     * @param $value
+     * @return string
+     */
     public function makeBaseUrl($value)
     {
         if (strpos($value, 'https://') === 0 || strpos($value, 'http://') === 0) {
             return $value;
+        } else if (strpos($value, '//') === 0) {
+            $scheme = explode('://', $this->base)[0];
+            return $scheme . ':' . $value;
         }
 
         if ($value && substr($value, 0, 1) !== '/') {
@@ -48,6 +55,34 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
         }
 
         return $this->base . $value;
+    }
+
+    /**
+     * @return \Closure
+     */
+    public function getBaseUrlParser(...$options)
+    {
+        return function ($value, &$props) use ($options) {
+            $props['url'] = $this->makeBaseUrl(is_string($value) ? $value : $value->getInnerHtml());
+            foreach ($options as $option) {
+                if (is_string($option)) { // forceDeepParse, goodDeepParse
+                    $props[$option] = true;
+                }
+            }
+        };
+    }
+
+    /**
+     * @return array
+     */
+    public function getBaseUrlAndNameParser(...$options)
+    {
+        return [
+            'attr:href' => $this->getBaseUrlParser(...$options),
+            'innerHtml' => function ($value, &$props) {
+                $props['name'] = strip_tags($value);
+            },
+        ];
     }
 
     public function startIndex()
@@ -168,5 +203,5 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
         d('firewall: ' . $url);
         $this->getDriver()->getClient()->get($url);
     }
-    
+
 }

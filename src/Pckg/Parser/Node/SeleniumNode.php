@@ -44,7 +44,10 @@ class SeleniumNode extends AbstractNode implements NodeInterface
      */
     public function getChildren()
     {
-        return collect($this->node->findElements(WebDriverBy::cssSelector('> *')));
+        return collect($this->node->findElements(WebDriverBy::xpath('child::*')))
+            ->map(function ($node) {
+                return new SeleniumNode($node);
+            });
     }
 
     /**
@@ -65,7 +68,7 @@ class SeleniumNode extends AbstractNode implements NodeInterface
             return new SeleniumNode($find);
         }
 
-        return collect($elements)->map(function($node) {
+        return collect($elements)->map(function ($node) {
             return new SeleniumNode($node);
         });
     }

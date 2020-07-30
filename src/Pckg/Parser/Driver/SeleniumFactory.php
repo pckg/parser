@@ -5,6 +5,7 @@ use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\Remote\WebDriverCapabilityType;
 use GuzzleHttp\Client;
+use GuzzleHttp\RequestOptions;
 use Pckg\Framework\Helper\Retry;
 
 class SeleniumFactory
@@ -39,15 +40,23 @@ class SeleniumFactory
          */
         return (new Retry())->interval(10)
             ->retry(10)
+            ->heartbeat(function () {
+                dispatcher()->trigger('heartbeat');
+            })
             ->make(function () use ($host, $proxy) {
                 /**
                  * Emit event so apps can implement capacity limiters.
                  */
-                $okay = (new Retry())->interval(10)
-                    ->retry(10)
+                $okay = (new Retry())->interval(5)
+                    ->retry(5)
+                    ->heartbeat(function () {
+                        d('heartbeat');
+                        dispatcher()->trigger('heartbeat');
+                    })
                     ->make(function () use ($host) {
-                        $response = json_decode((new Client())->get($host . '/status')->getBody()->getContents(), true);
-                        $hasCapacity = ($response['value']['ready'] ?? null) && ($response['value']['message']) === 'Hub has capacity';
+                        $response = (new Client())->get($host . '/status', [RequestOptions::HTTP_ERRORS => false]);
+                        $data = json_decode($response->getBody()->getContents(), true);
+                        $hasCapacity = ($data['value']['ready'] ?? null) && in_array($data['value']['message'] ?? null, ['Selenium Grid ready.', 'Hub has capacity']);
 
                         if (!$hasCapacity) {
                             throw new \Exception('No capacity on Hub / Grid');
@@ -67,12 +76,12 @@ class SeleniumFactory
                     $agents = config('pckg.parser.agents', []);
                     $agent = $agents[array_rand($agents)];
                     $options->addArguments([
-                        //'--disable-dev-shm-usage',
+                        '--disable-dev-shm-usage',
                         '--whitelisted-ips',
                         '--disable-extensions',
                         '--no-sandbox',
                         '--verbose',
-                        '--disable-gpu',
+                        //'--disable-gpu',
                         '--headless',
                         '--window-size=1280,1024',
                         'headless',
@@ -123,7 +132,7 @@ class SeleniumFactory
                  * Create webdriver.
                  */
                 d('creating web driver');
-                $webdriver = RemoteWebDriver::create($host, $capabilities, 10000);
+                $webdriver = RemoteWebDriver::create($host, $capabilities, 10000, 40000);
                 d('web driver created');
 
                 /**

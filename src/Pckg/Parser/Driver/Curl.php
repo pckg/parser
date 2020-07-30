@@ -2,6 +2,7 @@
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\RequestOptions;
 use Pckg\Framework\Helper\Retry;
 use Pckg\Parser\SkipException;
 use PHPHtmlParser\Dom;
@@ -55,7 +56,6 @@ class Curl extends AbstractDriver implements DriverInterface
          */
         $this->trigger('page.status', 'parsing');
         $html = $this->customGetter ? ($this->customGetter)($url) : $this->getHttp200($url);
-        d($html);
 
         /**
          * Emit response.
@@ -266,6 +266,9 @@ class Curl extends AbstractDriver implements DriverInterface
             $lastException = null;
             $contents = (new Retry())->retry(3)
                 ->interval(5)
+                ->heartbeat(function () {
+                    dispatcher()->trigger('heartbeat');
+                })
                 ->onError(function (\Throwable $e) use (&$options, &$lastException) {
                     $lastException = $e;
                     $this->trigger('parse.exception', $e);
@@ -415,6 +418,7 @@ class Curl extends AbstractDriver implements DriverInterface
                 'Pragma' => 'no-cache',
                 'Connection' => 'keep-alive',
             ],
+            RequestOptions::VERIFY => false,
         ];
 
         /**

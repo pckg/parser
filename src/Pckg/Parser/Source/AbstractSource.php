@@ -209,7 +209,7 @@ abstract class AbstractSource implements SourceInterface
     {
         foreach ($keys as $label => $slug) {
             try {
-                $value = $matcher($node, $label);
+                $value = $matcher($node, $label, $slug, $props);
                 if (trim($value)) {
                     $props[$slug] = trim($value);
 
