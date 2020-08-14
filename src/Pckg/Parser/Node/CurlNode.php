@@ -1,6 +1,6 @@
 <?php namespace Pckg\Parser\Node;
 
-use PHPHtmlParser\Dom\HtmlNode;
+use PHPHtmlParser\Dom\Node\HtmlNode;
 
 /**
  * Class CurlNode

@@ -63,6 +63,10 @@ abstract class AbstractDriver implements DriverInterface
      */
     public function getDispatcher()
     {
+        if (!$this->source) {
+            return null;
+        }
+        
         return $this->source->getDispatcher();
     }
 
@@ -74,7 +78,11 @@ abstract class AbstractDriver implements DriverInterface
      */
     public function trigger(string $event, $data)
     {
-        return $this->getDispatcher()->trigger($event, $data);
+        if (!($dispatcher = $this->getDispatcher())) {
+            return null;
+        }
+
+        return $dispatcher->trigger($event, $data);
     }
 
     /**

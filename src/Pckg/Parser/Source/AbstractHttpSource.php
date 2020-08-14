@@ -22,7 +22,7 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
     /**
      * @var int
      */
-    protected $subPages = 2;
+    protected $subPages = 1;
 
     /**
      * @var string

@@ -2,7 +2,7 @@
 
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Pckg\Parser\Node;
-use PHPHtmlParser\Dom\HtmlNode;
+use PHPHtmlParser\Dom\Node\HtmlNode;
 use Pckg\Parser\Node\NodeInterface;
 
 /**

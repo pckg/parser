@@ -12,6 +12,7 @@ use Pckg\Parser\ParserInterface;
 use Pckg\Parser\Driver\AbstractDriver;
 use Pckg\Parser\Node\CurlNode;
 use Pckg\Parser\Driver\DriverInterface;
+use PHPHtmlParser\Options;
 
 class Curl extends AbstractDriver implements DriverInterface
 {
@@ -70,7 +71,7 @@ class Curl extends AbstractDriver implements DriverInterface
 
     public function makeDom(string $html, $options = self::PARSER_DEFAULT)
     {
-        return (new Dom())->setOptions($options)->loadStr($html);
+        return $this->getDomFromOptions($options)->loadStr($html);
     }
 
     /**
@@ -132,7 +133,7 @@ class Curl extends AbstractDriver implements DriverInterface
             return [];
         }
 
-        return $listings->map(function (Dom\AbstractNode $node, $i) use ($selectors, $selector) {
+        return $listings->map(function (Dom\Node\AbstractNode $node, $i) use ($selectors, $selector) {
             try {
                 $props = [];
 
@@ -190,6 +191,19 @@ class Curl extends AbstractDriver implements DriverInterface
     }
 
     /**
+     * @param array $options
+     * @return Dom  
+     */
+    protected function getDomFromOptions(array $options = [])
+    {
+        $opt = new Options();
+        foreach ($options as $op => $value) {
+            $opt->{'set' . ucfirst($op)}($value);
+        }
+        return (new Dom())->setOptions($opt);
+    }
+
+    /**
      * @param array $structure
      * @param string $html
      *
@@ -218,7 +232,7 @@ class Curl extends AbstractDriver implements DriverInterface
                         $options = static::PARSER_RAW;
                     }
 
-                    $dom = (new Dom())->setOptions($options)->loadStr($html);
+                    $dom = $this->getDomFromOptions($options)->loadStr($html);
 
                     if (strpos($selector, 'json:') === 0 && !$details) {
                         continue; // skip to next selector, faking

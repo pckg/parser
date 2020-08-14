@@ -32,7 +32,7 @@ class CircularCurl extends Curl
         $firstSelector = array_keys($struct)[0];
         $nodes = $content->find($firstSelector);
 
-        return collect($nodes)->map(function(Dom\AbstractNode $node, $i) use ($struct, $content) {
+        return collect($nodes)->map(function(Dom\Node\AbstractNode $node, $i) use ($struct, $content) {
             try {
                 $props = [];
                 foreach ($struct as $selector => $prop) {
