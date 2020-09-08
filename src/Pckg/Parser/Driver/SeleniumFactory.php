@@ -50,7 +50,6 @@ class SeleniumFactory
                 $okay = (new Retry())->interval(5)
                     ->retry(5)
                     ->heartbeat(function () {
-                        d('heartbeat');
                         dispatcher()->trigger('heartbeat');
                     })
                     ->make(function () use ($host) {

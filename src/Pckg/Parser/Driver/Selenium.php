@@ -89,11 +89,12 @@ class Selenium extends AbstractDriver implements DriverInterface
                 $this->trigger('page.status', 'parsing');
                 $listings = $this->getListingsFromIndex();
                 $this->trigger('page.status', 'parsed');
+                return $listings;
             } catch (\Throwable $e) {
                 $this->trigger('page.status', 'error');
             }
 
-            return $listings;
+            return [];
         } catch (\Throwable $e) {
             $this->trigger('parse.exception', $e);
         }
