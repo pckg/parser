@@ -10,7 +10,7 @@
     }
   ],
   "require": {
-    "facebook/webdriver": "1.7.*",
+    "php-webdriver/webdriver": "1.8.*",
     "paquettg/php-html-parser": "dev-master",
     "viison/address-splitter": "dev-master",
     "pckg/collection": "dev-master",

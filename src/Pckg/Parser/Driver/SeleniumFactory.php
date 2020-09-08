@@ -25,7 +25,7 @@ class SeleniumFactory
             return $host;
         }
 
-        return config('pckg.parser.host', static::$host);
+        return config('pckg.parser.hub.host', static::$host);
     }
 
     /**

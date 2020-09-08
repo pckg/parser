@@ -36,6 +36,14 @@ class Selenium extends AbstractDriver implements DriverInterface
     }
 
     /**
+     * Close unclosed connections.
+     */
+    public function __destruct()
+    {
+        $this->close();
+    }
+
+    /**
      * @return \Pckg\Parser\Driver\AbstractDriver
      */
     public function close()
@@ -57,10 +65,9 @@ class Selenium extends AbstractDriver implements DriverInterface
             return $this->client;
         }
 
-        $host = config('pckg.parser.selenium.host', null);
         $proxy = $this->getHttpProxy();
 
-        return $this->client = SeleniumFactory::getSeleniumClient($host, $proxy);
+        return $this->client = SeleniumFactory::getSeleniumClient(null, $proxy);
     }
 
     /**

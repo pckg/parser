@@ -5,6 +5,7 @@ use Pckg\Parser\Driver\Curl;
 use Pckg\Parser\Driver\DriverInterface;
 use Pckg\Parser\Search\ResultInterface;
 use Pckg\Parser\Search\SearchInterface;
+use Pckg\Queue\Service\Tracker;
 
 abstract class AbstractHttpSource extends AbstractSource implements HttpSourceInterface
 {
@@ -89,13 +90,7 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
     {
         $url = $this->buildIndexUrl();
 
-        $pageData = [
-            'source' => $this->getKey(),
-            'url' => $url,
-            'status' => 'created',
-        ];
-        $page = $this->getSearch()->createPage($pageData);
-        $this->setPage($page);
+        $this->page->getPageRecord()->setAndSave(['url' => $url]);
 
         /**
          * Run it.
