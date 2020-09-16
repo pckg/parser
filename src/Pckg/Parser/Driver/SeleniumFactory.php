@@ -88,6 +88,7 @@ class SeleniumFactory
                         'disable-infobar',
                         '--lang=en_US',
                         '--user-agent=' . $agent,
+                        //'--user-data-dir=selenium',
                     ]);
                     $capabilities->setCapability(ChromeOptions::CAPABILITY, $options);
                 } else {
@@ -138,6 +139,7 @@ class SeleniumFactory
                  * Identify us as normal user.
                  */
                 $webdriver->executeScript(static::getProtectionScript());
+                d('executed un-protection');
 
                 return $webdriver;
             });
@@ -178,7 +180,10 @@ class SeleniumFactory
     // Overwrite the `plugins` property to use a custom getter.
     Object.defineProperty(navigator, \'languages\', {
       get: function() { return [\'en-US\', \'en\']; }
-    });';
+    });
+    
+    window.scrollBy(0,10);
+    ';
     }
 
 }

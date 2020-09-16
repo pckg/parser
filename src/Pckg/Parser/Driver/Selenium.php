@@ -84,6 +84,7 @@ class Selenium extends AbstractDriver implements DriverInterface
         $this->trigger('page.status', 'initiated');
         try {
             $this->source->firewall($url);
+            $this->source->getPage()->getPageRecord()->setAndSave(['url' => $selenium->getCurrentURL()]);
 
             try {
                 $this->trigger('page.status', 'parsing');
