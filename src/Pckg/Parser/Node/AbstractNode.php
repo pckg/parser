@@ -4,6 +4,7 @@ use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Pckg\Parser\Node;
 use PHPHtmlParser\Dom\Node\HtmlNode;
 use Pckg\Parser\Node\NodeInterface;
+use Twig\Node\TextNode;
 
 /**
  * Class Node
@@ -14,7 +15,7 @@ abstract class AbstractNode implements Node\NodeInterface
 {
 
     /**
-     * @var RemoteWebDriver|HtmlNode
+     * @var RemoteWebDriver|HtmlNode|TextNode
      */
     protected $node;
 
@@ -30,6 +31,10 @@ abstract class AbstractNode implements Node\NodeInterface
      */
     public function __construct($node, $selector = null)
     {
+        if (!$node) {
+            throw new \Exception('Node cannot be empty?');
+        }
+        
         $this->node = $node;
         $this->selector = $selector;
     }

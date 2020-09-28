@@ -29,7 +29,7 @@ trait HttpDriver
                         throw new \Exception('Proxy list HTTP code not 200');
                     }
                     return $response->getBody()->getContents();
-                }, 'app', '1day');
+                }, 'app', '15minutes');
                 $decoded = json_decode($response, true);
                 $proxies = $decoded;
             } catch (\Throwable $e) {

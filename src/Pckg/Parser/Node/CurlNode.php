@@ -39,7 +39,11 @@ class CurlNode extends AbstractNode implements NodeInterface
      */
     public function getChildren()
     {
-        return collect($this->node->getChildren())->map(function($node) {
+        if (!method_exists($this->node, 'getChildren')) {
+            return collect();
+        }
+
+        return collect($this->node->getChildren())->map(function ($node) {
             return new CurlNode($node);
         });
     }
