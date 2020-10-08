@@ -15,7 +15,7 @@
     "viison/address-splitter": "dev-master",
     "pckg/collection": "dev-master",
     "guzzlehttp/guzzle": ">=6.5",
-    "php-http/guzzle6-adapter": "^2.0@dev"
+    "php-http/guzzle6-adapter": "^2.0"
   },
   "minimum-stability": "dev",
   "autoload": {
