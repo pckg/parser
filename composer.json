@@ -13,8 +13,7 @@
     "php-webdriver/webdriver": "1.8.*",
     "paquettg/php-html-parser": "dev-master",
     "viison/address-splitter": "dev-master",
-    "pckg/collection": "dev-master",
-    "guzzlehttp/guzzle": "7.0"
+    "pckg/collection": "dev-master"
   },
   "minimum-stability": "dev",
   "autoload": {
