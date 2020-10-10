@@ -125,7 +125,8 @@ class Curl extends AbstractDriver implements DriverInterface
          * We will loop over defined structure.
          */
         try {
-            $listings = collect($dom->find($selector));
+            $found = $dom->find($selector);
+            $listings = collect($found);
             $this->trigger('debug', 'Located ' . $listings->count() . ' elements with selector ' . $selector);
         } catch (\Throwable $e) {
             $this->trigger('parse.exception', new \Exception('Error locating selector ' . $selector, null, $e));
@@ -319,8 +320,17 @@ class Curl extends AbstractDriver implements DriverInterface
                      * Add alternative options.
                      */
                     $host = parse_url($url, PHP_URL_HOST);
+                    $scheme = parse_url($url, PHP_URL_SCHEME);
                     //$options['headers']['Origin'] = $host; // not needed for get requests
-                    $options['headers']['Referer'] = parse_url($url, PHP_URL_SCHEME) . '://' . $host . '/';
+                    $options['headers']['Host'] = $host;
+                    $options['headers']['Origin'] = $scheme . '://' . $host . '/';
+                    $options['headers']['Referer'] = $scheme . '://' . $host . '/';
+                    $options['headers']['Sec-Fetch-Dest'] = 'document';
+                    $options['headers']['Sec-Fetch-Mode'] = 'navigate';
+                    $options['headers']['Sec-Fetch-Site'] = 'none';
+                    if ($scheme === 'https') {
+                        $options['headers']['Upgrade-Insecure-Requests'] = 1;
+                    }
 
                     /**
                      * Try to make a request.
@@ -426,6 +436,7 @@ class Curl extends AbstractDriver implements DriverInterface
         $options = [
             'headers' => [
                 'User-Agent' => $agents[array_rand($agents)],
+                'Accept' => 'text/html,application/xhtml+xml,application/xml',
                 'Accept-Language' => 'en,en-US;q=0.9,en;q=0.8',
                 'Accept-Encoding' => 'gzip, deflate', // br
                 'Cache-Control' => 'no-cache',
