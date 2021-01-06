@@ -1,6 +1,9 @@
 <?php namespace Pckg\Parser\Source;
 
+use Pckg\Parser\Driver\AbstractDriver;
+use Pckg\Parser\Driver\Curl;
 use Pckg\Parser\Driver\DriverInterface;
+use Pckg\Parser\Driver\Selenium;
 use Pckg\Parser\Search\ResultInterface;
 use Pckg\Parser\Search\SearchInterface;
 
@@ -48,7 +51,7 @@ interface HttpSourceInterface
     public function afterListingParse($driver, $listing, ...$props);
 
     /**
-     * @return DriverInterface
+     * @return AbstractDriver|DriverInterface|Curl|Selenium
      */
     public function getDriver();
 

@@ -131,7 +131,7 @@ class Selenium extends AbstractDriver implements DriverInterface
         /**
          * Parse them.
          */
-        return $listings->map(function ($node) use ($selectors, $listingsSelector) {
+        $listings = $listings->map(function ($node) use ($selectors, $listingsSelector) {
             try {
                 $props = [];
 
@@ -152,6 +152,10 @@ class Selenium extends AbstractDriver implements DriverInterface
                 $this->trigger('parse.exception', $e);
             }
         })->removeEmpty()->rekey()->all();
+
+        $this->takeScreenshot($selenium);
+
+        return $listings;
     }
 
     public function autoParseListing(&$props)

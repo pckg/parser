@@ -72,4 +72,14 @@ interface NodeInterface
      */
     public function parent();
 
+    /**
+     * @return bool
+     */
+    public function hasClass($class);
+
+    /**
+     * @return bool
+     */
+    public function isTextNode();
+
 }

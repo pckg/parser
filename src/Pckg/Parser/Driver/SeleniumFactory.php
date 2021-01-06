@@ -38,7 +38,7 @@ class SeleniumFactory
         /**
          * Retry for 20 times in the interval of 6s to get a connection.
          */
-        return (new Retry())->interval(10)
+        return (new Retry())->interval(5)
             ->retry(10)
             ->heartbeat(function () {
                 dispatcher()->trigger('heartbeat');
@@ -47,25 +47,28 @@ class SeleniumFactory
                 /**
                  * Emit event so apps can implement capacity limiters.
                  */
-                $okay = (new Retry())->interval(5)
-                    ->retry(5)
-                    ->heartbeat(function () {
-                        dispatcher()->trigger('heartbeat');
-                    })
-                    ->make(function () use ($host) {
-                        $response = (new Client())->get($host . '/status', [RequestOptions::HTTP_ERRORS => false]);
-                        $data = json_decode($response->getBody()->getContents(), true);
-                        $hasCapacity = ($data['value']['ready'] ?? null) && in_array($data['value']['message'] ?? null, ['Selenium Grid ready.', 'Hub has capacity']);
+                if (true) {
+                    d('retrying 5 times, 5 seconds for grid status');
+                    $okay = (new Retry())->interval(5)
+                        ->retry(5)
+                        ->heartbeat(function () {
+                            dispatcher()->trigger('heartbeat');
+                        })
+                        ->make(function () use ($host) {
+                            $response = (new Client())->get($host . '/status', [RequestOptions::HTTP_ERRORS => false]);
+                            $data = json_decode($response->getBody()->getContents(), true);
+                            $hasCapacity = ($data['value']['ready'] ?? null) && in_array($data['value']['message'] ?? null, ['Selenium Grid ready.', 'Hub has capacity']);
 
-                        if (!$hasCapacity) {
-                            throw new \Exception('No capacity on Hub / Grid');
-                        }
+                            if (!$hasCapacity) {
+                                throw new \Exception('No capacity on Hub / Grid');
+                            }
 
-                        return true;
-                    });
+                            return true;
+                        });
 
-                if (!$okay) {
-                    throw new \Exception('Hub has no capacity after 10 retries.');
+                    if (!$okay) {
+                        throw new \Exception('Hub has no capacity after 10 retries.');
+                    }
                 }
 
                 $chrome = true;
@@ -82,7 +85,8 @@ class SeleniumFactory
                         '--verbose',
                         //'--disable-gpu',
                         '--headless',
-                        '--window-size=1280,1024',
+                        //'--window-size=1280,1024',
+                        '--window-size=1600,1200',
                         'headless',
                         'start-maximized',
                         'disable-infobar',
@@ -131,7 +135,7 @@ class SeleniumFactory
                 /**
                  * Create webdriver.
                  */
-                d('creating web driver');
+                d('creating web driver on ' . $host);
                 $webdriver = RemoteWebDriver::create($host, $capabilities, 10000, 40000);
                 d('web driver created');
 

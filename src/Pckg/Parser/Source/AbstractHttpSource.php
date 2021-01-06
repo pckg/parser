@@ -3,6 +3,7 @@
 use Pckg\Parser\Driver\AbstractDriver;
 use Pckg\Parser\Driver\Curl;
 use Pckg\Parser\Driver\DriverInterface;
+use Pckg\Parser\Driver\Selenium;
 use Pckg\Parser\Search\ResultInterface;
 use Pckg\Parser\Search\SearchInterface;
 use Pckg\Queue\Service\Tracker;
@@ -100,7 +101,7 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
     }
 
     /**
-     * @return AbstractDriver|DriverInterface
+     * @return AbstractDriver|DriverInterface|Curl|Selenium
      */
     public function getDriver()
     {
