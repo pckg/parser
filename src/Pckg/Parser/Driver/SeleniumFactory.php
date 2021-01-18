@@ -39,7 +39,7 @@ class SeleniumFactory
          * Retry for 20 times in the interval of 6s to get a connection.
          */
         return (new Retry())->interval(5)
-            ->retry(10)
+            ->retry(5)
             ->heartbeat(function () {
                 dispatcher()->trigger('heartbeat');
             })
@@ -47,7 +47,7 @@ class SeleniumFactory
                 /**
                  * Emit event so apps can implement capacity limiters.
                  */
-                if (true) {
+                if (false) {
                     d('retrying 5 times, 5 seconds for grid status');
                     $okay = (new Retry())->interval(5)
                         ->retry(5)
@@ -83,7 +83,7 @@ class SeleniumFactory
                         '--disable-extensions',
                         '--no-sandbox',
                         '--verbose',
-                        //'--disable-gpu',
+                        '--disable-gpu',
                         '--headless',
                         //'--window-size=1280,1024',
                         '--window-size=1600,1200',
@@ -136,7 +136,7 @@ class SeleniumFactory
                  * Create webdriver.
                  */
                 d('creating web driver on ' . $host);
-                $webdriver = RemoteWebDriver::create($host, $capabilities, 10000, 40000);
+                $webdriver = RemoteWebDriver::create($host, $capabilities, 65000, 125000);
                 d('web driver created');
 
                 /**
@@ -152,6 +152,7 @@ class SeleniumFactory
     public static function getProtectionScript()
     {
         return '
+//await page.evaluateOnNewDocument(function(){
     // Pass the Webdriver Test.
     Object.defineProperty(navigator, \'webdriver\', {
       get: function() { return false; }
@@ -185,6 +186,7 @@ class SeleniumFactory
     Object.defineProperty(navigator, \'languages\', {
       get: function() { return [\'en-US\', \'en\']; }
     });
+//});
     
     window.scrollBy(0,10);
     ';

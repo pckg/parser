@@ -40,6 +40,14 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
     }
 
     /**
+     * @return string
+     */
+    public function getMultiBaseUrl()
+    {
+        return $this->getBaseUrl();
+    }
+
+    /**
      * @param $value
      * @return string
      */
@@ -48,7 +56,7 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
         if (strpos($value, 'https://') === 0 || strpos($value, 'http://') === 0) {
             return $value;
         } else if (strpos($value, '//') === 0) {
-            $scheme = explode('://', $this->base)[0];
+            $scheme = explode('://', $this->getMultiBaseUrl())[0];
             return $scheme . ':' . $value;
         }
 
@@ -56,7 +64,7 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
             $value = '/' . $value;
         }
 
-        return $this->base . $value;
+        return $this->getMultiBaseUrl() . $value;
     }
 
     /**

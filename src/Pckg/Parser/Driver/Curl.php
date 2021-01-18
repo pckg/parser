@@ -193,7 +193,7 @@ class Curl extends AbstractDriver implements DriverInterface
 
     /**
      * @param array $options
-     * @return Dom  
+     * @return Dom
      */
     protected function getDomFromOptions(array $options = [])
     {
@@ -231,11 +231,13 @@ class Curl extends AbstractDriver implements DriverInterface
                     if (strpos($selector, 'json:') === 0) {
                         $this->trigger('debug', 'Using raw / unclean input');
                         $options = static::PARSER_RAW;
+                    } else if (is_only_callable($details)) {
+                        $html = $details($html);
                     }
 
                     $dom = $this->getDomFromOptions($options)->loadStr($html);
 
-                    if (strpos($selector, 'json:') === 0 && !$details) {
+                    if ((strpos($selector, 'json:') === 0 && !$details) || is_only_callable($details)) {
                         continue; // skip to next selector, faking
                     }
                 }
@@ -331,6 +333,12 @@ class Curl extends AbstractDriver implements DriverInterface
                     if ($scheme === 'https') {
                         $options['headers']['Upgrade-Insecure-Requests'] = 1;
                     }
+
+                    /*$options[RequestOptions::DEBUG] = true;
+                    $options['curl.options'] = [
+                        CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_3,
+                        CURLOPT_SSL_CIPHER_LIST => 'DEFAULT@SECLEVEL=1'
+                    ];*/
 
                     /**
                      * Try to make a request.
@@ -444,6 +452,7 @@ class Curl extends AbstractDriver implements DriverInterface
                 'Connection' => 'keep-alive',
             ],
             RequestOptions::VERIFY => false,
+
         ];
 
         /**
