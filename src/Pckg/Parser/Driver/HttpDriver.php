@@ -49,7 +49,7 @@ trait HttpDriver
 
         return collect($proxies)->filter(function ($proxy) use ($exclude) {
                 return $proxy !== $exclude;
-            })->random() ?? collect($proxies)->first();
+        })->random() ?? collect($proxies)->first();
     }
 
     /**
