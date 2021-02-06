@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Driver;
+<?php
+
+namespace Pckg\Parser\Driver;
 
 use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
@@ -17,7 +19,6 @@ use Scintilla\Parser\Utils\SeleniumHelper;
 
 class Selenium extends AbstractDriver implements DriverInterface
 {
-
     use SeleniumHelper;
 
     protected $node = SeleniumNode::class;
@@ -247,5 +248,4 @@ class Selenium extends AbstractDriver implements DriverInterface
     {
         return $section->findElement(WebDriverBy::xpath('.//' . $xpath));
     }
-
 }

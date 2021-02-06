@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Pagination;
+<?php
+
+namespace Pckg\Parser\Pagination;
 
 use Pckg\Parser\Source\AbstractSource;
 use Pckg\Parser\Driver\DriverInterface;
@@ -60,5 +62,4 @@ class SeleniumComputed
         }
         d('pages', $pages);
     }
-
 }

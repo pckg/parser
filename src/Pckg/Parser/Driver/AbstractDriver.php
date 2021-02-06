@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Driver;
+<?php
+
+namespace Pckg\Parser\Driver;
 
 use Facebook\WebDriver\Exception\InvalidSelectorException;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
@@ -17,7 +19,6 @@ use PHPHtmlParser\Dom;
  */
 abstract class AbstractDriver implements DriverInterface
 {
-
     /**
      * @deprecated
      */
@@ -66,7 +67,7 @@ abstract class AbstractDriver implements DriverInterface
         if (!$this->source) {
             return null;
         }
-        
+
         return $this->source->getDispatcher();
     }
 
@@ -95,5 +96,4 @@ abstract class AbstractDriver implements DriverInterface
 
         return !!$found;
     }
-
 }

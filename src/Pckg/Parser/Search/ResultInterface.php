@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Search;
+<?php
+
+namespace Pckg\Parser\Search;
 
 /**
  * Interface ResultInterface
@@ -19,5 +21,4 @@ interface ResultInterface
      * @return mixed
      */
     public function getUrl();
-
 }

@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Driver;
+<?php
+
+namespace Pckg\Parser\Driver;
 
 interface HtmlDriverInterface extends DriverInterface
 {
@@ -48,5 +50,4 @@ interface HtmlDriverInterface extends DriverInterface
      * @return \Pckg\Parser\Node\NodeInterface
      */
     public function makeNode($node, $selector = null);
-
 }

@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Search;
+<?php
+
+namespace Pckg\Parser\Search;
 
 class Result
 {

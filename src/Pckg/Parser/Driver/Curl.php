@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Driver;
+<?php
+
+namespace Pckg\Parser\Driver;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
@@ -140,8 +142,12 @@ class Curl extends AbstractDriver implements DriverInterface
 
                 foreach ($selectors as $subSelector => $details) {
                     try {
-                        $this->processSectionByStructure($this->makeNode($node, $selector), $subSelector, $details,
-                            $props);
+                        $this->processSectionByStructure(
+                            $this->makeNode($node, $selector),
+                            $subSelector,
+                            $details,
+                            $props
+                        );
                     } catch (SkipException $e) {
                         throw $e;
                     } catch (\Throwable $e) {
@@ -246,8 +252,12 @@ class Curl extends AbstractDriver implements DriverInterface
                 if (!$element) {
                     $element = $dom->find('body', 0); // disables head // a1s
                 }
-                $this->processSectionByStructure(new \Pckg\Parser\Node\CurlNode($element), $selector,
-                    $details, $props);
+                $this->processSectionByStructure(
+                    new \Pckg\Parser\Node\CurlNode($element),
+                    $selector,
+                    $details,
+                    $props
+                );
             } catch (\Throwable $e) {
                 $this->trigger('parse.exception', new \Exception('Error parsing node selector ' . $selector, null, $e));
             }
@@ -521,5 +531,4 @@ class Curl extends AbstractDriver implements DriverInterface
     {
         return $section->find($xpath, 0);
     }
-
 }

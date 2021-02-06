@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Search;
+<?php
+
+namespace Pckg\Parser\Search;
 
 class Search implements SearchInterface
 {
@@ -34,5 +36,4 @@ class Search implements SearchInterface
     {
         return new Page($data);
     }
-
 }

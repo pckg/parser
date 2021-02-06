@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Driver;
+<?php
+
+namespace Pckg\Parser\Driver;
 
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Pckg\Parser\Node\NodeInterface;
@@ -46,5 +48,4 @@ interface DriverInterface
      * @return mixed
      */
     public function autoParseListing(&$props);
-
 }

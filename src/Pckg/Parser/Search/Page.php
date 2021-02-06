@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Search;
+<?php
+
+namespace Pckg\Parser\Search;
 
 class Page implements PageInterface
 {
@@ -53,5 +55,4 @@ class Page implements PageInterface
     {
         return $this->page['page'] ?? 1;
     }
-
 }

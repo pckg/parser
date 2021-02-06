@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Node;
+<?php
+
+namespace Pckg\Parser\Node;
 
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Pckg\Parser\Node;
@@ -34,7 +36,7 @@ abstract class AbstractNode implements Node\NodeInterface
         if (!$node) {
             throw new \Exception('Node cannot be empty?');
         }
-        
+
         $this->node = $node;
         $this->selector = $selector;
     }
@@ -82,5 +84,4 @@ abstract class AbstractNode implements Node\NodeInterface
     {
         return $this->getTagName() === 'text';
     }
-
 }

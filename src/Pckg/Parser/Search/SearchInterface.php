@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Search;
+<?php
+
+namespace Pckg\Parser\Search;
 
 interface SearchInterface
 {
@@ -12,5 +14,4 @@ interface SearchInterface
     public function getDataProps();
 
     public function createPage(array $data = []);
-
 }

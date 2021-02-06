@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Source;
+<?php
+
+namespace Pckg\Parser\Source;
 
 use Pckg\Parser\Driver\AbstractDriver;
 use Pckg\Parser\Driver\Curl;
@@ -9,7 +11,7 @@ use Pckg\Parser\Search\SearchInterface;
 
 interface HttpSourceInterface
 {
-    
+
     /**
      * @param SearchInterface $search
      *
@@ -54,5 +56,4 @@ interface HttpSourceInterface
      * @return AbstractDriver|DriverInterface|Curl|Selenium
      */
     public function getDriver();
-
 }

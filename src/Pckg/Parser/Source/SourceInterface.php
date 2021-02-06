@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Source;
+<?php
+
+namespace Pckg\Parser\Source;
 
 use Pckg\Collection;
 use Pckg\Concept\Event\Dispatcher;
@@ -62,5 +64,4 @@ interface SourceInterface
      * @return mixed
      */
     public function startIndex();
-
 }

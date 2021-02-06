@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Source;
+<?php
+
+namespace Pckg\Parser\Source;
 
 use Pckg\Concept\Event\Dispatcher;
 
@@ -29,11 +31,10 @@ class SourceFactory
      */
     public static function createMultipleWithCapability($capability)
     {
-        return collect(config('fons.sources', []))->map(function($source) {
+        return collect(config('fons.sources', []))->map(function ($source) {
             return SourceFactory::create($source);
-        })->filter(function(SourceInterface $source) use ($capability) {
+        })->filter(function (SourceInterface $source) use ($capability) {
             return $source->hasCapability($capability);
         })->all();
     }
-
 }

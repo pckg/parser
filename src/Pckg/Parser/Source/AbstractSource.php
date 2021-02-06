@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Source;
+<?php
+
+namespace Pckg\Parser\Source;
 
 use Pckg\Collection;
 use Pckg\Concept\Event\Dispatcher;
@@ -174,7 +176,6 @@ abstract class AbstractSource implements SourceInterface
 
     public function afterListingParse($driver, $listing, ...$params)
     {
-
     }
 
     public function shouldContinueToNextPage($page)
@@ -227,5 +228,4 @@ abstract class AbstractSource implements SourceInterface
             $props[$key] = $this->getSearch()->getDataProp($key);
         }
     }
-
 }

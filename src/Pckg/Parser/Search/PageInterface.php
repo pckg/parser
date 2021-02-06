@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Search;
+<?php
+
+namespace Pckg\Parser\Search;
 
 interface PageInterface
 {
@@ -17,5 +19,4 @@ interface PageInterface
     public function clone(array $data = []);
 
     public function getPage();
-
 }

@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Node;
+<?php
+
+namespace Pckg\Parser\Node;
 
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\Remote\RemoteWebElement;
@@ -110,5 +112,4 @@ class SeleniumNode extends AbstractNode implements NodeInterface
     {
         return new SeleniumNode($this->node->findElement(WebDriverBy::xpath('parent::*')));
     }
-
 }

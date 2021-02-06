@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Node;
+<?php
+
+namespace Pckg\Parser\Node;
 
 use PHPHtmlParser\Dom\Node\HtmlNode;
 
@@ -66,7 +68,7 @@ class CurlNode extends AbstractNode implements NodeInterface
             return new CurlNode($find, $this->selector . ' ' . $selector);
         }
 
-        return collect($this->node->find($selector, null))->map(function(HtmlNode $node) use ($selector) {
+        return collect($this->node->find($selector, null))->map(function (HtmlNode $node) use ($selector) {
             return new CurlNode($node, $this->selector . ' ' . $selector);
         });
     }
@@ -108,5 +110,4 @@ class CurlNode extends AbstractNode implements NodeInterface
     {
         return new CurlNode($this->node->getParent());
     }
-
 }

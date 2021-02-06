@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Node;
+<?php
+
+namespace Pckg\Parser\Node;
 
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Pckg\Collection;
@@ -21,7 +23,7 @@ interface NodeInterface
      * @return string|null
      */
     public function getSelector();
-    
+
     /**
      * @return string|null
      */
@@ -81,5 +83,4 @@ interface NodeInterface
      * @return bool
      */
     public function isTextNode();
-
 }

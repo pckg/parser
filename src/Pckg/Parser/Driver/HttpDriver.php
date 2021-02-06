@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Driver;
+<?php
+
+namespace Pckg\Parser\Driver;
 
 use Facebook\WebDriver\Exception\InvalidSelectorException;
 use GuzzleHttp\Client;
@@ -47,7 +49,7 @@ trait HttpDriver
 
         return collect($proxies)->filter(function ($proxy) use ($exclude) {
                 return $proxy !== $exclude;
-            })->random() ?? collect($proxies)->first();
+        })->random() ?? collect($proxies)->first();
     }
 
     /**
@@ -85,8 +87,10 @@ trait HttpDriver
             } catch (SkipException $e) {
                 throw $e;
             } catch (\Throwable $e) {
-                $this->trigger('parse.exception',
-                    new \Exception('Exception processing node selector ' . $selector, null, $e));
+                $this->trigger(
+                    'parse.exception',
+                    new \Exception('Exception processing node selector ' . $selector, null, $e)
+                );
             }
 
             return;
@@ -113,9 +117,14 @@ trait HttpDriver
                 } catch (SkipException $e) {
                     throw $e;
                 } catch (\Throwable $e) {
-                    $this->trigger('parse.exception',
-                        new \Exception('Exception processing node selector ' . $selector . ' index ' . $i, null,
-                            $e));
+                    $this->trigger(
+                        'parse.exception',
+                        new \Exception(
+                            'Exception processing node selector ' . $selector . ' index ' . $i,
+                            null,
+                            $e
+                        )
+                    );
                 }
             });
 
@@ -134,77 +143,79 @@ trait HttpDriver
             } */ elseif ($getter === 'innerHtml') {
             $value = $node->getInnerHtml();
             $match = true;
-        } elseif ($getter === 'innerText') {
-            $value = $node->getInnerText();
-            $match = true;
-        } elseif ($getter === '&') {
-            if (is_array($setter)) {
-                foreach ($setter as $k => $v) {
-                    $this->processSectionByStructure($node, $k, $v, $props);
-                }
-
-                return;
-            }
-            $value = $node; // no need to double wrap a node
-            $match = true;
+} elseif ($getter === 'innerText') {
+    $value = $node->getInnerText();
+    $match = true;
+} elseif ($getter === '&') {
+    if (is_array($setter)) {
+        foreach ($setter as $k => $v) {
+            $this->processSectionByStructure($node, $k, $v, $props);
         }
+
+        return;
+    }
+    $value = $node; // no need to double wrap a node
+    $match = true;
+}
 
         /**
          * Set when value was found.
          */
-        if ($value) {
-            if (is_only_callable($setter)) {
-                $setter($value, $props);
+if ($value) {
+    if (is_only_callable($setter)) {
+        $setter($value, $props);
 
-                return;
-            }
+        return;
+    }
 
-            $props[$setter] = $value;
+    $props[$setter] = $value;
 
-            return;
-        } elseif ($match) {
-            return;
-        }
+    return;
+} elseif ($match) {
+    return;
+}
 
         /**
          * Actual selector was passed.
          */
         $section = $node->find($getter, 0);
-        if (!$this->found($node->getSelector() . ' ' . $getter, $section)) {
-            return;
-        }
+if (!$this->found($node->getSelector() . ' ' . $getter, $section)) {
+    return;
+}
 
         /**
          * Pass to callback when final.
          */
-        if (is_only_callable($setter)) {
-            $setter($section, $props);
+if (is_only_callable($setter)) {
+    $setter($section, $props);
 
-            return;
-        }
+    return;
+}
 
         /**
          * Set as prop when setter.
          */
-        if (is_string($setter)) {
-            $props[$setter] = $section->getInnerHtml();
+if (is_string($setter)) {
+    $props[$setter] = $section->getInnerHtml();
 
-            return;
-        }
+    return;
+}
 
         /**
          * Loop through definition.
          */
-        foreach ($setter as $get => $set) {
-            try {
-                $this->processSectionByStructure($section, $get, $set, $props);
-            } catch (SkipException $e) {
-                throw $e;
-            } catch (\Throwable $e) {
-                $this->trigger('parse.exception',
-                    new \Exception('Error processing section ' . $getter . ' ' . $get, null, $e));
-            }
-        }
+foreach ($setter as $get => $set) {
+    try {
+        $this->processSectionByStructure($section, $get, $set, $props);
+    } catch (SkipException $e) {
+        throw $e;
+    } catch (\Throwable $e) {
+        $this->trigger(
+            'parse.exception',
+            new \Exception('Error processing section ' . $getter . ' ' . $get, null, $e)
+        );
+    }
+}
     }
 
     /**
@@ -222,5 +233,4 @@ trait HttpDriver
 
         return new $nodeProxy($node, $selector);
     }
-
 }

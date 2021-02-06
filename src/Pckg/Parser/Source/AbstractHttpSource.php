@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Source;
+<?php
+
+namespace Pckg\Parser\Source;
 
 use Pckg\Parser\Driver\AbstractDriver;
 use Pckg\Parser\Driver\Curl;
@@ -207,5 +209,4 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
         d('firewall: ' . $url);
         $this->getDriver()->getClient()->get($url);
     }
-
 }

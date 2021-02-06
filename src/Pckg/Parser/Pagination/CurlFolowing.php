@@ -1,4 +1,6 @@
-<?php namespace Pckg\Parser\Pagination;
+<?php
+
+namespace Pckg\Parser\Pagination;
 
 use Pckg\Parser\Source\AbstractSource;
 use Pckg\Parser\Search\PageInterface;
@@ -22,5 +24,4 @@ class CurlFolowing
          */
         [$driver, $holder] = $params;
     }
-
 }
