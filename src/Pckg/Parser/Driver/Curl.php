@@ -237,7 +237,7 @@ class Curl extends AbstractDriver implements DriverInterface
                     if (strpos($selector, 'json:') === 0) {
                         $this->trigger('debug', 'Using raw / unclean input');
                         $options = static::PARSER_RAW;
-                    } else if (is_only_callable($details)) {
+                    } else if (!is_string($selector) && is_only_callable($details)) {
                         $html = $details($html);
                     }
 
