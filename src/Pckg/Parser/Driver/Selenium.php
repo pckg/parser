@@ -8,6 +8,7 @@ use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\Remote\RemoteWebElement;
 use Facebook\WebDriver\Remote\WebDriverCapabilityType;
 use Facebook\WebDriver\WebDriverBy;
+use Pckg\Parser\Client\Headless;
 use Pckg\Parser\Node\SeleniumNode;
 use Pckg\Parser\SkipException;
 use Pckg\Parser\Source\AbstractSource;
@@ -23,6 +24,8 @@ class Selenium extends AbstractDriver implements DriverInterface
 
     protected $node = SeleniumNode::class;
 
+    protected $clientClass = \Pckg\Parser\Client\Selenium::class;
+
     /**
      * @return $this|\Pckg\Parser\Driver\AbstractDriver
      * @throws \Throwable
@@ -31,7 +34,15 @@ class Selenium extends AbstractDriver implements DriverInterface
     {
         $proxy = $this->getHttpProxy();
 
-        $this->client = SeleniumFactory::getSeleniumClient(null, $proxy);
+        if ($this->client) {
+            $this->close();
+        }
+
+        /**
+         *
+         */
+        $clientClass = $this->clientClass;
+        $this->client = new $clientClass($proxy);
 
         return $this;
     }
@@ -50,7 +61,7 @@ class Selenium extends AbstractDriver implements DriverInterface
     public function close()
     {
         if ($this->client) {
-            $this->client->quit();
+            $this->client->close();
             $this->client = null;
         }
 
@@ -58,17 +69,17 @@ class Selenium extends AbstractDriver implements DriverInterface
     }
 
     /**
-     * @return RemoteWebDriver
+     * @return \Pckg\Parser\Client\Selenium|Headless
      */
-    private function getSeleniumClient()
+    public function getClient()
     {
         if ($this->client) {
             return $this->client;
         }
 
-        $proxy = $this->getHttpProxy();
+        $this->open();
 
-        return $this->client = SeleniumFactory::getSeleniumClient(null, $proxy);
+        return $this->client;
     }
 
     /**
@@ -81,24 +92,40 @@ class Selenium extends AbstractDriver implements DriverInterface
     public function getListings(string $url)
     {
         $this->trigger('page.status', 'initiating');
-        $selenium = $this->getSeleniumClient();
+        $client = $this->getClient();
         $this->trigger('page.status', 'initiated');
         try {
             $this->source->firewall($url);
-            $this->source->getPage()->getPageRecord()->setAndSave(['url' => $selenium->getCurrentURL()]);
+            $this->source->getPage()->getPageRecord()->setAndSave(['url' => $client->getCurrentURL()]);
 
+            $listings = [];
+            $this->trigger('page.status', 'parsing');
             try {
-                $this->trigger('page.status', 'parsing');
                 $listings = $this->getListingsFromIndex();
-                $this->trigger('page.status', 'parsed');
-                return $listings;
             } catch (\Throwable $e) {
+                d(exception($e));
+                $this->trigger('parse.exception', $e);
                 $this->trigger('page.status', 'error');
+                $this->takeScreenshot();
+
+                return [];
             }
 
-            return [];
+            $this->trigger('page.status', 'parsed');
+
+            /**
+             * Collect screenshot when there are no listings.
+             * Also collect HTML for debugging?
+             */
+            if (!$listings) {
+                $client->takeScreenshot();
+            }
+
+            return $listings;
         } catch (\Throwable $e) {
             $this->trigger('parse.exception', $e);
+            $this->trigger('page.status', 'error');
+            $this->takeScreenshot();
         }
 
         return [];
@@ -120,14 +147,13 @@ class Selenium extends AbstractDriver implements DriverInterface
         /**
          * We do not close the client since it should already be initiated.
          */
-        $selenium = $this->getSeleniumClient();
-        $allListings = $selenium->findElements(WebDriverBy::cssSelector($listingsSelector));
+        $client = $this->getClient();
+        $allListings = $client->findElements($listingsSelector);
 
         /**
          * Collect all listings.
          */
         $listings = collect($allListings);
-        d('located listings', $listings->count(), $listingsSelector);
 
         /**
          * Parse them.
@@ -146,23 +172,40 @@ class Selenium extends AbstractDriver implements DriverInterface
                     }
                 }
 
-                d($props);
-
                 return $props;
             } catch (\Throwable $e) {
                 $this->trigger('parse.exception', $e);
             }
         })->removeEmpty()->rekey()->all();
 
-        $this->takeScreenshot($selenium);
-
         return $listings;
+    }
+
+    /**
+     * @param              $url
+     */
+    public function getListingProps(string $url)
+    {
+        $client = $this->getClient();
+
+        try {
+            $props = [];
+            $client->get($url);
+            $client->wait(5);
+
+            $this->autoParseListing($props);
+        } catch (\Throwable $e) {
+            $this->trigger('parse.exception', $e);
+            $this->takeScreenshot();
+        }
+
+        return $props;
     }
 
     public function autoParseListing(&$props)
     {
         $structure = $this->source->getListingStructure();
-        $htmlNode = $this->makeNode($this->getClient()->findElement(WebDriverBy::cssSelector('html')));
+        $htmlNode = $this->makeNode($this->getClient()->findElement('html'));
         foreach ($structure as $selector => $details) {
             try {
                 $this->processSectionByStructure($htmlNode, $selector, $details, $props);
@@ -172,80 +215,5 @@ class Selenium extends AbstractDriver implements DriverInterface
         }
 
         $this->source->afterListingParse($this->getClient(), $props);
-    }
-
-    /**
-     * @param              $url
-     */
-    public function getListingProps(string $url)
-    {
-        $selenium = $this->getSeleniumClient();
-
-        try {
-            $props = [];
-            $selenium->get($url);
-            $selenium->wait(5);
-            sleep(5);
-            $this->takeScreenshot($selenium);
-            $this->autoParseListing($props);
-        } catch (\Throwable $e) {
-            $this->trigger('parse.exception', $e);
-        }
-
-        return $props;
-    }
-
-    /**
-     * @param $section RemoteWebElement
-     * @param $attribute
-     *
-     * @return mixed
-     */
-    public function getElementAttribute($section, string $attribute)
-    {
-        return $section->getAttribute($attribute);
-    }
-
-    /**
-     * @param $section RemoteWebElement
-     *
-     * @return mixed
-     */
-    public function getElementInnerHtml($section)
-    {
-        return $section->getText();
-    }
-
-    /**
-     * @param $section RemoteWebElement
-     * @param $css
-     *
-     * @return mixed
-     */
-    public function getElementByCss($section, string $css)
-    {
-        return $section->findElement(WebDriverBy::cssSelector($css));
-    }
-
-    /**
-     * @param $section RemoteWebElement
-     * @param $css
-     *
-     * @return mixed
-     */
-    public function getElementsByCss($section, string $css)
-    {
-        return $section->findElements(WebDriverBy::cssSelector($css));
-    }
-
-    /**
-     * @param $section RemoteWebElement
-     * @param $xpath
-     *
-     * @return mixed
-     */
-    public function getElementByXpath($section, string $xpath)
-    {
-        return $section->findElement(WebDriverBy::xpath('.//' . $xpath));
     }
 }

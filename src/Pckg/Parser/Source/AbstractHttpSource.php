@@ -5,6 +5,7 @@ namespace Pckg\Parser\Source;
 use Pckg\Parser\Driver\AbstractDriver;
 use Pckg\Parser\Driver\Curl;
 use Pckg\Parser\Driver\DriverInterface;
+use Pckg\Parser\Driver\Puppeteer;
 use Pckg\Parser\Driver\Selenium;
 use Pckg\Parser\Search\ResultInterface;
 use Pckg\Parser\Search\SearchInterface;
@@ -111,7 +112,7 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
     }
 
     /**
-     * @return AbstractDriver|DriverInterface|Curl|Selenium
+     * @return AbstractDriver|DriverInterface|Curl|Selenium|Puppeteer
      */
     public function getDriver()
     {

@@ -2,6 +2,7 @@
 
 namespace Pckg\Parser\Pagination;
 
+use Pckg\Parser\Node\NodeInterface;
 use Pckg\Parser\Source\AbstractSource;
 use Pckg\Parser\Driver\DriverInterface;
 use Pckg\Parser\Search\PageInterface;
@@ -11,9 +12,12 @@ class SeleniumComputed
 
     public function getNumPages($driver, $selenium)
     {
+        /**
+         * @var DriverInterface $driver
+         */
         $links = collect($driver->getElementsByCss($selenium, 'ul.pagination li'));
         $lastLink = $driver->getElementByCss($links->last(), 'a');
-        $lastHref = $driver->getElementAttribute($lastLink, 'href');
+        $lastHref = $lastLink->getAttribute('href');
         $exploded = explode('&pg=', $lastHref);
 
         return explode('&', $exploded[0])[0];
