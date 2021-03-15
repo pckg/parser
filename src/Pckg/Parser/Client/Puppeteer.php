@@ -40,6 +40,7 @@ class Puppeteer implements Headless
         $this->client = $puppeteer->launch([
             'headless' => true,
             'ignoreHTTPSErrors' => true,
+            'defaultViewport' => null,
             'args' => $args
         ]);
     }
@@ -90,6 +91,10 @@ class Puppeteer implements Headless
         return $this->try(function () use ($url) {
             $this->page = $this->client->newPage();
             context()->bind(Page::class, $this->page);
+            $this->page->setViewport([
+                'width' => 1920,
+                'height' => 1080,
+            ]);
             $this->page->goto($url);
             $this->page->evaluate((new JsFunction())->body(SeleniumFactory::getProtectionScript()));
         });

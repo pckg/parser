@@ -2,13 +2,11 @@
 
 namespace Pckg\Parser\Node;
 
-use Facebook\WebDriver\Remote\RemoteWebDriver;
-use Facebook\WebDriver\Remote\RemoteWebElement;
-use Facebook\WebDriver\WebDriverBy;
+use Nesk\Puphpeteer\Resources\ElementHandle;
 use Nesk\Puphpeteer\Resources\Page;
 use Nesk\Rialto\Data\JsFunction;
+use Pckg\Collection;
 use Pckg\Parser\Driver\SeleniumFactory;
-use Pckg\Parser\Node\CurlNode;
 use Pckg\Parser\Node\AbstractNode;
 use Pckg\Parser\Node\NodeInterface;
 
@@ -16,7 +14,7 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
 {
 
     /**
-     * @var RemoteWebElement
+     * @var ElementHandle
      */
     protected $node;
 
@@ -73,7 +71,7 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
      * @param      $selector
      * @param null $nth
      *
-     * @return mixed|\Pckg\Collection|CurlNode|\Pckg\Parser\Node\NodeInterface|null
+     * @return mixed|PuppeteerNode|Collection|null
      */
     public function find($selector, $nth = null)
     {
@@ -99,7 +97,15 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
      */
     public function getAttribute($name)
     {
-        return $this->evaluateElement('return element.attributes[' . json_encode($name) . '].value');
+        return $this->evaluateElement('return (element.attributes[' . json_encode($name) . '] || {}).value || \'\'');
+    }
+
+    protected function nodeOrNull($node)
+    {
+        if (!$node) {
+            return null;
+        }
+        return new PuppeteerNode($node);
     }
 
     /**
@@ -109,11 +115,7 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
      */
     public function nextSibling()
     {
-        $node = $this->evaluateElement('return element.nextElementSibling');
-        if (!$node) {
-            return null;
-        }
-        return new PuppeteerNode($node);
+        return $this->nodeOrNull($this->evaluateElement('return element.nextElementSibling'));
     }
 
     /**
@@ -123,11 +125,7 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
      */
     public function previousSibling()
     {
-        $node = $this->evaluateElement('return element.previousElementSibling');
-        if (!$node) {
-            return null;
-        }
-        return new PuppeteerNode($node);
+        return $this->nodeOrNull($this->evaluateElement('return element.previousElementSibling'));
     }
 
     /**
@@ -135,10 +133,6 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
      */
     public function parent()
     {
-        $node = $this->evaluateElement('return element.parentNode');
-        if (!$node) {
-            return null;
-        }
-        return new PuppeteerNode($node);
+        return $this->nodeOrNull($this->evaluateElement('return element.parentNode'));
     }
 }
