@@ -5,6 +5,9 @@ namespace Pckg\Parser\Node;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\Remote\RemoteWebElement;
 use Facebook\WebDriver\WebDriverBy;
+use Nesk\Puphpeteer\Resources\Page;
+use Nesk\Rialto\Data\JsFunction;
+use Pckg\Parser\Driver\SeleniumFactory;
 use Pckg\Parser\Node\CurlNode;
 use Pckg\Parser\Node\AbstractNode;
 use Pckg\Parser\Node\NodeInterface;
@@ -18,11 +21,25 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
     protected $node;
 
     /**
+     * @return Page
+     * @throws \Exception
+     */
+    protected function getPage()
+    {
+        return context()->get(Page::class)->tryCatch;
+    }
+
+    protected function evaluateElement($body)
+    {
+        return $this->getPage()->evaluate(JsFunction::createWithParameters(['element'])->body($body), $this->node);
+    }
+
+    /**
      * @return string
      */
     public function getInnerHtml()
     {
-        return $this->node->getAttribute('innerHTML');
+        return $this->evaluateElement('return element.innerHTML');
     }
 
     /**
@@ -30,7 +47,7 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
      */
     public function getInnerText()
     {
-        return $this->node->getAttribute('innerText');
+        return $this->evaluateElement('return element.innerText');
     }
 
     /**
@@ -38,7 +55,7 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
      */
     public function getTagName()
     {
-        return $this->node->getTagName();
+        return $this->evaluateElement('return element.tagName');
     }
 
     /**
@@ -46,7 +63,7 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
      */
     public function getChildren()
     {
-        return collect($this->node->findElements(WebDriverBy::xpath('child::*')))
+        return collect($this->evaluateElement('return element.children'))
             ->map(function ($node) {
                 return new PuppeteerNode($node);
             });
@@ -60,7 +77,7 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
      */
     public function find($selector, $nth = null)
     {
-        $elements = $this->node->findElements(WebDriverBy::cssSelector($selector));
+        $elements = $this->node->tryCatch->querySelectorAll($selector);
         if ($nth > 0 || $nth === 0) {
             $find = $elements[$nth] ?? null;
             if (!$find) {
@@ -82,7 +99,7 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
      */
     public function getAttribute($name)
     {
-        return $this->node->getAttribute($name);
+        return $this->evaluateElement('return element.attributes[' . json_encode($name) . '].value');
     }
 
     /**
@@ -92,7 +109,11 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
      */
     public function nextSibling()
     {
-        return new PuppeteerNode($this->node->findElement(WebDriverBy::xpath('following-sibling::*')));
+        $node = $this->evaluateElement('return element.nextElementSibling');
+        if (!$node) {
+            return null;
+        }
+        return new PuppeteerNode($node);
     }
 
     /**
@@ -102,14 +123,22 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
      */
     public function previousSibling()
     {
-        return new PuppeteerNode($this->node->findElement(WebDriverBy::xpath('preceding-sibling::*')));
+        $node = $this->evaluateElement('return element.previousElementSibling');
+        if (!$node) {
+            return null;
+        }
+        return new PuppeteerNode($node);
     }
 
     /**
-     * @return SeleniumNode|\Pckg\Parser\Node\NodeInterface
+     * @return Puppe
      */
     public function parent()
     {
-        return new PuppeteerNode($this->node->findElement(WebDriverBy::xpath('parent::*')));
+        $node = $this->evaluateElement('return element.parentNode');
+        if (!$node) {
+            return null;
+        }
+        return new PuppeteerNode($node);
     }
 }

@@ -50,6 +50,7 @@ class Puppeteer implements Headless
             $this->client->close();
             $this->client = null;
             $this->page = null;
+            context()->unbind(Page::class);
         });
     }
 
@@ -88,6 +89,7 @@ class Puppeteer implements Headless
     {
         return $this->try(function () use ($url) {
             $this->page = $this->client->newPage();
+            context()->bind(Page::class, $this->page);
             $this->page->goto($url);
             $this->page->evaluate((new JsFunction())->body(SeleniumFactory::getProtectionScript()));
         });
