@@ -65,14 +65,14 @@ class Puppeteer implements Headless
     public function findElements($cssSelector)
     {
         return $this->try(function () use ($cssSelector) {
-            return $this->page->tryCatch->querySelectorAll($cssSelector);
+            return $this->tryCatch()->querySelectorAll($cssSelector);
         });
     }
 
     public function findElement($cssSelector)
     {
         return $this->try(function () use ($cssSelector) {
-            return $this->page->tryCatch->querySelector($cssSelector);
+            return $this->tryCatch()->querySelector($cssSelector);
         });
     }
 
@@ -80,7 +80,7 @@ class Puppeteer implements Headless
     {
         try {
             $screenshot = 'selenium/' . ($this->key ?? sluggify(get_class($this))) . '-' . date('Y-m-d-H-i-s') . '-' . sha1(microtime()) . '.png';
-            $this->page->tryCatch->screenshot(['path' => path('uploads') . $screenshot]);
+            $this->tryCatch()->screenshot(['path' => path('uploads') . $screenshot]);
         } catch (\Throwable $e) {
             error_log("Puppeteer: Error taking screenshot - " . exception($e));
         }
@@ -108,7 +108,7 @@ class Puppeteer implements Headless
     public function waitClickable($selector)
     {
         return $this->try(function () use ($selector) {
-            $this->page->tryCatch->waitForSelector($selector, ['timeout' => 5000]);
+            $this->tryCatch()->waitForSelector($selector, ['timeout' => 5000]);
         });
     }
 
@@ -116,16 +116,16 @@ class Puppeteer implements Headless
     {
 
         return $this->try(function () use ($selector, $value) {
-            $this->page->tryCatch->type($selector, '');
-            $this->page->tryCatch->type($selector, $value);
+            $this->tryCatch()->type($selector, '');
+            $this->tryCatch()->type($selector, $value);
         });
     }
 
     public function sendKeys($selector, $keys)
     {
         return $this->try(function () use ($selector, $keys) {
-            $this->tryCatch->findElement($selector)->press($keys);
-            //$this->page->tryCatch->type($selector, $keys);
+            $this->tryCatch()->findElement($selector)->press($keys);
+            //$this->tryCatch()->type($selector, $keys);
             // or page.keyboard.press('Enter');
         });
     }
@@ -133,7 +133,14 @@ class Puppeteer implements Headless
     public function click($selector, $wait = true)
     {
         return $this->try(function () use ($selector) {
-            $this->page->tryCatch->click($selector);
+            $this->tryCatch()->click($selector);
+        });
+    }
+
+    public function executeScript($script)
+    {
+        return $this->try(function () use ($script) {
+            $this->tryCatch()->evaluate((new JsFunction())->body($script));
         });
     }
 
@@ -145,5 +152,10 @@ class Puppeteer implements Headless
         } catch (\Throwable $e) {
             error_log('EXCEPTIION: ' . exception($e));
         }
+    }
+
+    public function tryCatch()
+    {
+        return $this->page->tryCatch;
     }
 }
