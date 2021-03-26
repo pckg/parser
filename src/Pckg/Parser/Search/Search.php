@@ -31,9 +31,4 @@ class Search implements SearchInterface
     {
         return $this->search;
     }
-
-    public function createPage(array $data = [])
-    {
-        return new Page($data);
-    }
 }
