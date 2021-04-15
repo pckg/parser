@@ -34,7 +34,8 @@ abstract class AbstractNode implements Node\NodeInterface
     public function __construct($node, $selector = null)
     {
         if (!$node) {
-            throw new \Exception('Node cannot be empty?');
+            $node = '';
+            //throw new \Exception('Node cannot be empty?');
         }
 
         $this->node = $node;
