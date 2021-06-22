@@ -238,12 +238,13 @@ class Curl extends AbstractDriver implements DriverInterface
                         $this->trigger('debug', 'Using raw / unclean input');
                         $options = static::PARSER_RAW;
                     } else if (!is_string($selector) && is_only_callable($details)) {
+                        // custom html retriever
                         $html = $details($html);
                     }
 
                     $dom = $this->getDomFromOptions($options)->loadStr($html);
 
-                    if ((strpos($selector, 'json:') === 0 && !$details) || is_only_callable($details)) {
+                    if ((strpos($selector, 'json:') === 0 && !$details)/* || is_only_callable($details)*/) {
                         continue; // skip to next selector, faking
                     }
                 }
@@ -252,12 +253,18 @@ class Curl extends AbstractDriver implements DriverInterface
                 if (!$element) {
                     $element = $dom->find('body', 0); // disables head // a1s
                 }
-                $this->processSectionByStructure(
-                    new \Pckg\Parser\Node\CurlNode($element),
-                    $selector,
-                    $details,
-                    $props
-                );
+                try {
+                    $this->processSectionByStructure(
+                        new \Pckg\Parser\Node\CurlNode($element),
+                        $selector,
+                        $details,
+                        $props
+                    );
+                } catch (SkipException $e) {
+                    throw $e;
+                } catch (\Throwable $e) {
+                    $this->trigger('parse.exception', $e);
+                }
             } catch (\Throwable $e) {
                 $this->trigger('parse.exception', new \Exception('Error parsing node selector ' . $selector, null, $e));
             }

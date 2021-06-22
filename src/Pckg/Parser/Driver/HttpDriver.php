@@ -146,7 +146,13 @@ trait HttpDriver
         } elseif ($getter === '&') {
             if (is_array($setter)) {
                 foreach ($setter as $k => $v) {
-                    $this->processSectionByStructure($node, $k, $v, $props);
+                    try {
+                        $this->processSectionByStructure($node, $k, $v, $props);
+                    } catch (SkipException $e) {
+                        throw $e;
+                    } catch (\Throwable $e) {
+                        $this->trigger('parse.exception', $e);
+                    }
                 }
 
                 return;
@@ -158,7 +164,9 @@ trait HttpDriver
         /**
          * Set when value was found.
          */
-        if ($value) {
+        if ($match) {
+            $this->found($node->getSelector() . ' ' . $getter, $value);
+
             if (is_only_callable($setter)) {
                 $setter($value, $props);
 
@@ -166,9 +174,6 @@ trait HttpDriver
             }
 
             $props[$setter] = $value;
-
-            return;
-        } elseif ($match) {
             return;
         }
 
@@ -196,6 +201,13 @@ trait HttpDriver
             $props[$setter] = $section->getInnerHtml();
 
             return;
+        }
+
+        /**
+         * Throw error when not array.
+         */
+        if (!is_array($setter)) {
+            throw new \Exception('Setters is not array');
         }
 
         /**

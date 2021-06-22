@@ -96,7 +96,10 @@ class Selenium extends AbstractDriver implements DriverInterface
         $this->trigger('page.status', 'initiated');
         try {
             $this->source->firewall($url);
-            $this->source->getPage()->getPageRecord()->setAndSave(['url' => $client->getCurrentURL()]);
+            $currentUrl = $client->getCurrentURL();
+            if ($currentUrl) {
+                $this->source->getPage()->getPageRecord()->setAndSave(['url' => $currentUrl]);
+            }
 
             $listings = [];
             $this->trigger('page.status', 'parsing');
@@ -186,6 +189,11 @@ class Selenium extends AbstractDriver implements DriverInterface
      */
     public function getListingProps(string $url)
     {
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            $this->trigger('debug', 'Invalid URL, stopping! ' . $url);
+            return [];
+        }
+
         $client = $this->getClient();
 
         try {
@@ -209,6 +217,8 @@ class Selenium extends AbstractDriver implements DriverInterface
         foreach ($structure as $selector => $details) {
             try {
                 $this->processSectionByStructure($htmlNode, $selector, $details, $props);
+            } catch (SkipException $e) {
+                throw $e;
             } catch (\Throwable $e) {
                 $this->trigger('parse.exception', $e);
             }
