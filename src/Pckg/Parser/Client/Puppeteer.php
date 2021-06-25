@@ -48,8 +48,10 @@ class Puppeteer implements Headless
     public function close()
     {
         return $this->try(function () {
-            $this->client->close();
-            $this->client = null;
+            if ($this->client) {
+                $this->client->close();
+                $this->client = null;
+            }
             $this->page = null;
             context()->unbind(Page::class);
         });

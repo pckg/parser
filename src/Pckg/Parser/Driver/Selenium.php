@@ -8,23 +8,25 @@ use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\Remote\RemoteWebElement;
 use Facebook\WebDriver\Remote\WebDriverCapabilityType;
 use Facebook\WebDriver\WebDriverBy;
-use Pckg\Parser\Client\Headless;
+use Pckg\Parser\Client\Headless as HeadlessClient;
+use Pckg\Parser\Client\Selenium as SeleniumClient;
+use Pckg\Parser\Driver\AbstractDriver;
 use Pckg\Parser\Node\SeleniumNode;
 use Pckg\Parser\SkipException;
 use Pckg\Parser\Source\AbstractSource;
 use Pckg\Parser\ParserInterface;
-use Pckg\Parser\Driver\AbstractDriver;
 use Pckg\Parser\Driver\DriverInterface;
 use Pckg\Parser\Source\SourceInterface;
 use Scintilla\Parser\Utils\SeleniumHelper;
+use Pckg\Parser\Driver\Headless as HeadlessDriver;
 
-class Selenium extends AbstractDriver implements DriverInterface
+class Selenium extends HeadlessDriver
 {
     use SeleniumHelper;
 
     protected $node = SeleniumNode::class;
 
-    protected $clientClass = \Pckg\Parser\Client\Selenium::class;
+    protected $clientClass = SeleniumClient::class;
 
     /**
      * @return $this|\Pckg\Parser\Driver\AbstractDriver
@@ -32,19 +34,31 @@ class Selenium extends AbstractDriver implements DriverInterface
      */
     public function open()
     {
-        $proxy = $this->getHttpProxy();
+        $this->setGuessedClient();
 
+        return $this;
+    }
+
+    public function setGuessedClient()
+    {
         if ($this->client) {
-            $this->close();
+            // do we always want to close previous session?
+            error_log('closing client?');
+            //$this->close();
+        }
+
+        if ($client = context()->getOrDefault(AbstractDriver::class . '.client', null)) {
+            error_log('using from context');
+            $this->client = $client;
+            return $this;
         }
 
         /**
          *
          */
         $clientClass = $this->clientClass;
+        $proxy = $this->getHttpProxy();
         $this->client = new $clientClass($proxy);
-
-        return $this;
     }
 
     /**
@@ -52,6 +66,7 @@ class Selenium extends AbstractDriver implements DriverInterface
      */
     public function __destruct()
     {
+        // yeah?
         $this->close();
     }
 
@@ -69,15 +84,18 @@ class Selenium extends AbstractDriver implements DriverInterface
     }
 
     /**
-     * @return \Pckg\Parser\Client\Selenium|Headless
+     * @return \Pckg\Parser\Client\Selenium|HeadlessClient
      */
     public function getClient()
     {
         if ($this->client) {
+            error_log('client exists');
             return $this->client;
         }
 
+        error_log('opening client');
         $this->open();
+        error_log('client opened');
 
         return $this->client;
     }

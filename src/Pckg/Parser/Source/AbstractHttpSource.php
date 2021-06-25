@@ -10,6 +10,7 @@ use Pckg\Parser\Driver\Selenium;
 use Pckg\Parser\Search\ResultInterface;
 use Pckg\Parser\Search\SearchInterface;
 use Pckg\Queue\Service\Tracker;
+use Scintilla\Parser\Source\UsesSingleSession;
 
 abstract class AbstractHttpSource extends AbstractSource implements HttpSourceInterface
 {
@@ -191,8 +192,16 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
         }
 
         /**
+         * We will continue with parsing in the same job.
+         */
+        if ($this instanceof UsesSingleSession) {
+            return;
+        }
+
+        /**
          * Now we can close the driver.
          */
+
         $this->getDriver()->close();
     }
 
