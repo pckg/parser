@@ -65,7 +65,7 @@ class Selenium implements Headless
 
     public function waitClickable($selector)
     {
-        $this->client->wait(5, 333)
+        $this->client->wait(15, 333)
             ->until(
                 WebDriverExpectedCondition::elementToBeClickable(WebDriverBy::cssSelector($selector)),
                 'Waited selector not found: ' . $selector
@@ -103,5 +103,19 @@ class Selenium implements Headless
     public function executeScript($script)
     {
         $this->client->executeScript($script);
+    }
+
+    public function switchToFrame($frame)
+    {
+        $this->client->switchTo()->frame($frame);
+
+        return $this;
+    }
+
+    public function switchToDefault()
+    {
+        $this->client->switchTo()->defaultContent();
+
+        return $this;
     }
 }

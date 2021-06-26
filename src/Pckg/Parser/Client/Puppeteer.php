@@ -43,6 +43,7 @@ class Puppeteer implements Headless
             'defaultViewport' => null,
             'args' => $args
         ]);
+        $this->executeScript(SeleniumFactory::getProtectionScript());
     }
 
     public function close()
@@ -159,5 +160,15 @@ class Puppeteer implements Headless
     public function tryCatch()
     {
         return $this->page->tryCatch;
+    }
+
+    public function switchToFrame($frame)
+    {
+        return $frame->contentFrame();
+    }
+
+    public function switchToDefault()
+    {
+        return $this;
     }
 }

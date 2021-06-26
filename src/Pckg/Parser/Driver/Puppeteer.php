@@ -17,7 +17,6 @@ use Pckg\Parser\ParserInterface;
 use Pckg\Parser\Driver\AbstractDriver;
 use Pckg\Parser\Driver\DriverInterface;
 use Pckg\Parser\Source\SourceInterface;
-use Scintilla\Parser\Utils\SeleniumHelper;
 
 class Puppeteer extends Selenium implements DriverInterface
 {
