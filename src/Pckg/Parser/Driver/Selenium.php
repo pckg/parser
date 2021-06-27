@@ -124,7 +124,7 @@ class Selenium extends HeadlessDriver
                 d(exception($e));
                 $this->trigger('parse.exception', $e);
                 $this->trigger('page.status', 'error');
-                $this->takeScreenshot();
+                $client->takeScreenshot();
 
                 return [];
             }
@@ -143,7 +143,7 @@ class Selenium extends HeadlessDriver
         } catch (\Throwable $e) {
             $this->trigger('parse.exception', $e);
             $this->trigger('page.status', 'error');
-            $this->takeScreenshot();
+            $client->takeScreenshot();
         }
 
         return [];
@@ -219,7 +219,7 @@ class Selenium extends HeadlessDriver
             $this->autoParseListing($props);
         } catch (\Throwable $e) {
             $this->trigger('parse.exception', $e);
-            $this->takeScreenshot();
+            $client->takeScreenshot();
         }
 
         return $props;

@@ -178,16 +178,12 @@ abstract class AbstractSource implements SourceInterface
     {
     }
 
+    /**
+     * Limit number of parsed (sub)pages.
+     */
     public function shouldContinueToNextPage($page)
     {
-        /**
-         * Limit number of parsed (sub)pages.
-         */
-        if ($this->subPages && $page < $this->subPages) {
-            return true;
-        }
-
-        return false;
+        return isset($this->subPages) && $page < $this->subPages;
     }
 
     /**

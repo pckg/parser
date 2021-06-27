@@ -29,8 +29,7 @@ class PuppeteerNode extends AbstractNode implements NodeInterface
 
     protected function evaluateElement($body)
     {
-        // @codingStandardsIgnoreLine
-        return $this->getPage()->evaluate(JsFunction::createWithParameters(['element'])->body($body), $this->node);
+        return $this->getPage()->evaluate(new JsFunction(['element'], $body, $this->node));
     }
 
     /**
