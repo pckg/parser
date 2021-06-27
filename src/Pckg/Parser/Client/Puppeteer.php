@@ -9,13 +9,8 @@ use Nesk\Puphpeteer\Resources\Page;
 use Nesk\Rialto\Data\JsFunction;
 use Pckg\Parser\Driver\SeleniumFactory;
 
-class Puppeteer implements Headless
+class Puppeteer extends AbstractClient implements Headless
 {
-
-    /**
-     * @var Browser
-     */
-    protected $client;
 
     /**
      * @var Page
@@ -37,6 +32,9 @@ class Puppeteer implements Headless
         if ($proxy) {
             $args[] = '--proxy-server=http://' . $proxy;
         }
+        /**
+         * @var Browser
+         */
         $this->client = $puppeteer->launch([
             'headless' => true,
             'ignoreHTTPSErrors' => true,
@@ -44,6 +42,15 @@ class Puppeteer implements Headless
             'args' => $args
         ]);
         $this->executeScript(SeleniumFactory::getProtectionScript());
+    }
+
+    public function getCookies()
+    {
+        return collect($this->page->cookies())->map(
+            function ($cookie) {
+                return $cookie->toArray();
+            }
+        );
     }
 
     public function close()

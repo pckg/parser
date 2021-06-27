@@ -2,22 +2,59 @@
 
 namespace Pckg\Parser\Client;
 
+use Facebook\WebDriver\Cookie;
 use Facebook\WebDriver\WebDriverBy;
 use Facebook\WebDriver\WebDriverExpectedCondition;
 use Facebook\WebDriver\WebDriverKeys;
 use Pckg\Parser\Driver\SeleniumFactory;
 
-class Selenium implements Headless
+class Selenium extends AbstractClient implements Headless
 {
-
-    /**
-     * @var \Facebook\WebDriver\Remote\RemoteWebDriver
-     */
-    protected $client;
 
     public function __construct($proxy)
     {
         $this->client = SeleniumFactory::getSeleniumClient(null, $proxy);
+    }
+
+    public function getCookies()
+    {
+        return collect($this->getClient()->manage()->getCookies())->map(
+            function (Cookie $cookie) {
+                return $cookie->toArray();
+            }
+        );
+    }
+
+    public function setCookies(array $cookies = [], array $mapper = [])
+    {
+        $cookies = collect($cookies)->groupBy(
+            function ($cookie) {
+                return trim($cookie['domain'], '.');
+            }
+        );
+
+        foreach ($mapper as $url => $domain) {
+            if ($cookies->hasKey('domain')) {
+                continue;
+            }
+
+            d('incomplete cookie');
+            return false;
+        }
+
+        $client = $this->getClient();
+        foreach ($mapper as $url => $domain) {
+            $cookie = $cookies->getKey($domain);
+            try {
+                d('cookiefying', $url, $domain);
+                $client->get($url);
+                $client->manage()->addCookie($cookie);
+            } catch (\Throwable $e) {
+                d(exception($e));
+            }
+        }
+
+        return true;
     }
 
     public function close()
