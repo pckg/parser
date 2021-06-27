@@ -17,13 +17,10 @@ use Pckg\Parser\Source\AbstractSource;
 use Pckg\Parser\ParserInterface;
 use Pckg\Parser\Driver\DriverInterface;
 use Pckg\Parser\Source\SourceInterface;
-use Scintilla\Parser\Utils\HeadlessHelper;
 use Pckg\Parser\Driver\Headless as HeadlessDriver;
 
 class Selenium extends HeadlessDriver
 {
-    use HeadlessHelper;
-
     protected $node = SeleniumNode::class;
 
     protected $clientClass = SeleniumClient::class;

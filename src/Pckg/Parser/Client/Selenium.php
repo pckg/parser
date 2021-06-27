@@ -25,7 +25,7 @@ class Selenium extends AbstractClient implements Headless
         );
     }
 
-    public function setCookies(array $cookies = [], array $mapper = [])
+    public function setCookies(array $cookies, array $domains)
     {
         $cookies = collect($cookies)->groupBy(
             function ($cookie) {
@@ -33,20 +33,18 @@ class Selenium extends AbstractClient implements Headless
             }
         );
 
-        foreach ($mapper as $url => $domain) {
+        foreach ($domains as $url => $domain) {
             if ($cookies->hasKey('domain')) {
                 continue;
             }
 
-            d('incomplete cookie');
             return false;
         }
 
         $client = $this->getClient();
-        foreach ($mapper as $url => $domain) {
+        foreach ($domains as $url => $domain) {
             $cookie = $cookies->getKey($domain);
             try {
-                d('cookiefying', $url, $domain);
                 $client->get($url);
                 $client->manage()->addCookie($cookie);
             } catch (\Throwable $e) {
@@ -81,7 +79,7 @@ class Selenium extends AbstractClient implements Headless
     public function takeScreenshot()
     {
         try {
-            $screenshot = 'selenium/' . ($this->key ?? sluggify(get_class($this))) . '-' . date('Y-m-d-H-i-s') . '-' . sha1(microtime()) . '.png';
+            $screenshot = 'selenium/' . sha1(microtime()) . '.png';
             $this->client->takeScreenshot(path('uploads') . $screenshot);
             return $screenshot;
         } catch (\Throwable $e) {

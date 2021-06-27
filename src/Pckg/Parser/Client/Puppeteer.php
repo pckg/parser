@@ -53,6 +53,11 @@ class Puppeteer extends AbstractClient implements Headless
         );
     }
 
+    public function setCookies(array $cookies, array $domains)
+    {
+        // TODO: Implement setCookies() method.
+    }
+
     public function close()
     {
         return $this->try(function () {
@@ -89,7 +94,7 @@ class Puppeteer extends AbstractClient implements Headless
     public function takeScreenshot()
     {
         try {
-            $screenshot = 'selenium/' . ($this->key ?? sluggify(get_class($this))) . '-' . date('Y-m-d-H-i-s') . '-' . sha1(microtime()) . '.png';
+            $screenshot = 'selenium/' .     sha1(microtime()) . '.png';
             $this->tryCatch()->screenshot(['path' => path('uploads') . $screenshot]);
         } catch (\Throwable $e) {
             error_log("Puppeteer: Error taking screenshot - " . exception($e));

@@ -26,7 +26,7 @@ class Page implements PageInterface
 
     public function clone(array $data = [])
     {
-        return new static(array_merge($this->page, $data));
+        return new self(array_merge($this->page, $data));
     }
 
     public function processListings(array $listings)

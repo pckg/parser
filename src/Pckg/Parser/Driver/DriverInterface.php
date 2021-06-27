@@ -21,10 +21,6 @@ interface DriverInterface
      */
     public function getClient();
 
-    public function open();
-
-    public function close();
-
     /**
      * @param SourceInterface $parser
      * @param string          $url
@@ -40,12 +36,4 @@ interface DriverInterface
      * @return array
      */
     public function getListingProps(string $url);
-
-    /**
-     * @param $driver
-     * @param $props
-     *
-     * @return mixed
-     */
-    public function autoParseListing(&$props);
 }

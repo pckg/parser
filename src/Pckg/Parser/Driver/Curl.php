@@ -159,7 +159,7 @@ class Curl extends AbstractDriver implements DriverInterface
             } catch (SkipException $e) {
                 $this->trigger('parse.log', 'Skipping index ' . $i . ': ' . exception($e));
             } catch (\Throwable $e) {
-                $this->trigger('parse.exception', new \Exception('Error parsing listing on index ' . $i, $null, $e));
+                $this->trigger('parse.exception', new \Exception('Error parsing listing on index ' . $i, null, $e));
             }
         })->removeEmpty()->rekey()->all();
     }
@@ -189,12 +189,6 @@ class Curl extends AbstractDriver implements DriverInterface
         $props = $this->getListingPropsFromHtml($this->source->getListingStructure(), $html);
 
         return $props;
-    }
-
-    public function autoParseListing(&$props)
-    {
-        $props = $this->getListingPropsFromHtml($this->source->getListingStructure());
-        $this->source->afterListingParse($selenium, $props);
     }
 
     /**

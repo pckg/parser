@@ -5,13 +5,13 @@ namespace Pckg\Parser\Source;
 use Pckg\Parser\Driver\AbstractDriver;
 use Pckg\Parser\Driver\Curl;
 use Pckg\Parser\Driver\DriverInterface;
+use Pckg\Parser\Driver\Headless;
 use Pckg\Parser\Driver\Puppeteer;
+use Pckg\Parser\Driver\Puppeteer as PuppeteerDriver;
 use Pckg\Parser\Driver\Selenium;
 use Pckg\Parser\Search\ResultInterface;
 use Pckg\Parser\Search\SearchInterface;
 use Pckg\Queue\Service\Tracker;
-use Scintilla\Parser\Source\UsesSingleJob;
-use Scintilla\Parser\Source\UsesSingleSession;
 
 abstract class AbstractHttpSource extends AbstractSource implements HttpSourceInterface
 {
@@ -35,6 +35,35 @@ abstract class AbstractHttpSource extends AbstractSource implements HttpSourceIn
      * @var string
      */
     protected $base;
+
+    public function useHeadlessDriver($driver = null)
+    {
+        if (!$driver || $driver === Headless::class) {
+            $driver = config('scintilla.parser.headlessDriver', PuppeteerDriver::class);
+        }
+
+        $this->driver = $driver;
+    }
+
+    public function isHeadlessDriver()
+    {
+        return in_array($this->driver, [Selenium::class, PuppeteerDriver::class, Headless::class]);
+    }
+
+    public function useSeleniumDriver()
+    {
+        $this->driver = Selenium::class;
+    }
+
+    public function usePuppeteerDriver()
+    {
+        $this->driver = PuppeteerDriver::class;
+    }
+
+    public function useCurlDriver()
+    {
+        $this->driver = Curl::class;
+    }
 
     /**
      * @return string

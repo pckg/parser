@@ -11,6 +11,7 @@
   ],
   "require": {
     "php-webdriver/webdriver": "1.8.*",
+    "nesk/puphpeteer": "^2.0",
     "paquettg/php-html-parser": "dev-master",
     "viison/address-splitter": "dev-master",
     "pckg/collection": "dev-master",
@@ -18,7 +19,8 @@
     "pckg/utils": "dev-master"
   },
   "require-dev": {
-    "pckg-app/frontend-dev": "dev-master"
+    "pckg-app/frontend-dev": "dev-master",
+    "pckg/framework": "dev-master"
   },
   "autoload": {
     "psr-4": {
