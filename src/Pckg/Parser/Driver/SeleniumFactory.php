@@ -8,7 +8,7 @@ use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\Remote\WebDriverCapabilityType;
 use GuzzleHttp\Client;
 use GuzzleHttp\RequestOptions;
-use Pckg\Framework\Helper\Retry;
+use Pckg\Utils\Retry;
 
 class SeleniumFactory
 {

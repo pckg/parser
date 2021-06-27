@@ -13,7 +13,9 @@
     "php-webdriver/webdriver": "1.8.*",
     "paquettg/php-html-parser": "dev-master",
     "viison/address-splitter": "dev-master",
-    "pckg/collection": "dev-master"
+    "pckg/collection": "dev-master",
+    "pckg/concept": "dev-master",
+    "pckg/utils": "dev-master"
   },
   "require-dev": {
     "pckg-app/frontend-dev": "dev-master"

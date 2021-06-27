@@ -5,7 +5,7 @@ namespace Pckg\Parser\Driver;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RequestOptions;
-use Pckg\Framework\Helper\Retry;
+use Pckg\Utils\Retry;
 use Pckg\Parser\SkipException;
 use PHPHtmlParser\Dom;
 use Pckg\Parser\Source\SourceInterface;
