@@ -81,7 +81,7 @@ class Puppeteer extends AbstractClient implements Headless
     {
         return $this->try(function () use ($cssSelector) {
             return $this->tryCatch()->querySelectorAll($cssSelector);
-        });
+        }, []);
     }
 
     public function findElement($cssSelector)
@@ -159,13 +159,14 @@ class Puppeteer extends AbstractClient implements Headless
         });
     }
 
-    public function try(callable $task)
+    public function try(callable $task, $default = false)
     {
         try {
             $response = $task();
             return $response;
         } catch (\Throwable $e) {
             error_log('EXCEPTIION: ' . exception($e));
+            return $default;
         }
     }
 

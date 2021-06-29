@@ -209,26 +209,25 @@ class Selenium extends HeadlessDriver
             return [];
         }
 
-        $client = $this->getClient();
-
         try {
-            $props = [];
+            $client = $this->getClient();
             $client->get($url);
             $client->wait(5);
 
-            $this->autoParseListing($props);
+            return $this->getListingPropsFromHtml(
+                $this->source->getListingStructure(),
+                $this->makeNode($this->getClient()->findElement('html'))
+            );
         } catch (\Throwable $e) {
             $this->trigger('parse.exception', $e);
             $client->takeScreenshot();
+            return [];
         }
-
-        return $props;
     }
 
-    public function autoParseListing(&$props)
+    public function getListingPropsFromHtml(array $structure, $html)
     {
-        $structure = $this->source->getListingStructure();
-        $htmlNode = $this->makeNode($this->getClient()->findElement('html'));
+        $props = [];
         foreach ($structure as $selector => $details) {
             try {
                 $this->processSectionByStructure($htmlNode, $selector, $details, $props);
@@ -239,6 +238,6 @@ class Selenium extends HeadlessDriver
             }
         }
 
-        $this->source->afterListingParse($this->getClient(), $props);
+        return $props;
     }
 }

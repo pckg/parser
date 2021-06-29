@@ -186,9 +186,7 @@ class Curl extends AbstractDriver implements DriverInterface
          */
         $this->trigger('listing.html', $html);
 
-        $props = $this->getListingPropsFromHtml($this->source->getListingStructure(), $html);
-
-        return $props;
+        return $this->getListingPropsFromHtml($this->source->getListingStructure(), $html);
     }
 
     /**
@@ -228,18 +226,21 @@ class Curl extends AbstractDriver implements DriverInterface
             try {
                 if (!$dom) {
                     $options = static::PARSER_DEFAULT;
-                    if (strpos($selector, 'json:') === 0) {
+                    $shouldContinue = false;
+                    if ($selector && strpos($selector, 'json:') === 0) {
                         $this->trigger('debug', 'Using raw / unclean input');
                         $options = static::PARSER_RAW;
                     } else if (!is_string($selector) && is_only_callable($details)) {
-                        // custom html retriever
+                        $this->trigger('debug', 'Decorating input');
+                        // custom html retriever/decorator
                         $html = $details($html);
+                        $shouldContinue = true;
                     }
 
                     $dom = $this->getDomFromOptions($options)->loadStr($html);
 
-                    if ((strpos($selector, 'json:') === 0 && !$details)/* || is_only_callable($details)*/) {
-                        continue; // skip to next selector, faking
+                    if ($shouldContinue || !$details) {
+                        continue; // skip to next selector, faking raw parse?
                     }
                 }
 
@@ -259,6 +260,8 @@ class Curl extends AbstractDriver implements DriverInterface
                 } catch (\Throwable $e) {
                     $this->trigger('parse.exception', $e);
                 }
+            } catch (SkipException $e) {
+                throw $e;
             } catch (\Throwable $e) {
                 $this->trigger('parse.exception', new \Exception('Error parsing node selector ' . $selector, null, $e));
             }

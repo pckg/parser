@@ -44,15 +44,6 @@ interface HttpSourceInterface
     public function processListingParse(ResultInterface $result);
 
     /**
-     * @param       $driver
-     * @param       $listing
-     * @param mixed ...$props
-     *
-     * @return mixed
-     */
-    public function afterListingParse($driver, $listing, ...$props);
-
-    /**
      * @return AbstractDriver|DriverInterface|Curl|Selenium
      */
     public function getDriver();

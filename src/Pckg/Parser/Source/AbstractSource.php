@@ -174,10 +174,6 @@ abstract class AbstractSource implements SourceInterface
         return $this->key;
     }
 
-    public function afterListingParse($driver, $listing, ...$params)
-    {
-    }
-
     /**
      * Limit number of parsed (sub)pages.
      */
